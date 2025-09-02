@@ -1,0 +1,282 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Korean SNS Design System - All colors, gradients, fonts, and animations */
+
+@layer base {
+  :root {
+    /* Core color palette - Korean inspired */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    
+    /* Brand colors - Vibrant and playful */
+    --primary: 348 86% 61%; /* Coral red */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 321 73% 57%; /* Pink */
+    --secondary-foreground: 0 0% 100%;
+    --accent: 271 91% 65%; /* Purple */
+    --accent-foreground: 0 0% 100%;
+    
+    /* Voice mode colors - Minimal */
+    --voice-bg: 0 0% 3%;
+    --voice-text: 0 0% 97%;
+    --voice-accent: 348 86% 61%;
+    
+    /* Text mode colors - Playful */
+    --text-bg: 210 40% 98%;
+    --text-card: 0 0% 100%;
+    --text-border: 214.3 31.8% 91.4%;
+    
+    /* Level system colors */
+    --level-1: 45 93% 58%; /* Gold for beginners */
+    --level-2: 271 91% 65%; /* Purple for intermediate */
+    --level-3: 220 91% 56%; /* Blue for advanced */
+    --level-4: 142 76% 36%; /* Green for expert */
+    
+    /* Semantic colors */
+    --success: 142 76% 36%;
+    --warning: 45 93% 58%;
+    --error: 0 84% 60%;
+    --info: 220 91% 56%;
+    
+    /* Post type colors */
+    --info-post: 220 91% 56%;
+    --social-post: 348 86% 61%;
+    --nonverbal-post: 271 91% 65%;
+    --other-post: 142 76% 36%;
+    
+    /* Interactive elements */
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 348 86% 61%;
+    --radius: 1rem;
+    
+    /* Shadows and effects */
+    --shadow-soft: 0 4px 20px -1px rgba(0, 0, 0, 0.1);
+    --shadow-medium: 0 8px 25px -5px rgba(0, 0, 0, 0.15);
+    --shadow-strong: 0 16px 40px -12px rgba(0, 0, 0, 0.25);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Pretendard Variable', Pretendard, Roboto, 'Noto Sans KR', 'Segoe UI', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', sans-serif;
+  }
+  
+  /* Korean typography optimizations */
+  .korean-text {
+    font-feature-settings: 'kern' 1;
+    text-rendering: optimizeLegibility;
+    word-break: keep-all;
+    line-height: 1.6;
+  }
+}
+
+@layer components {
+  /* Mode-specific layouts */
+  .text-mode {
+    @apply bg-gradient-to-br from-text-bg to-purple-50 min-h-screen;
+  }
+  
+  .voice-mode {
+    @apply bg-voice-bg text-voice-text min-h-screen flex items-center justify-center;
+  }
+  
+  /* Post cards */
+  .post-card {
+    @apply bg-text-card rounded-2xl p-4 shadow-soft border border-text-border backdrop-blur-sm;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .post-card:hover {
+    @apply shadow-medium transform -translate-y-1;
+  }
+  
+  /* Level indicators */
+  .level-1 { @apply bg-gradient-to-r from-yellow-400 to-yellow-500; }
+  .level-2 { @apply bg-gradient-to-r from-purple-400 to-purple-500; }
+  .level-3 { @apply bg-gradient-to-r from-blue-400 to-blue-500; }
+  .level-4 { @apply bg-gradient-to-r from-green-400 to-green-500; }
+  
+  /* Post type indicators */
+  .info-post { @apply border-l-4 border-info-post bg-blue-50/50; }
+  .social-post { @apply border-l-4 border-social-post bg-red-50/50; }
+  .nonverbal-post { @apply border-l-4 border-nonverbal-post bg-purple-50/50; }
+  .other-post { @apply border-l-4 border-other-post bg-green-50/50; }
+  
+  /* Interactive buttons */
+  .btn-primary {
+    @apply bg-gradient-to-r from-primary to-secondary text-primary-foreground px-6 py-3 rounded-xl font-medium shadow-soft;
+    transition: all 0.2s ease-out;
+  }
+  
+  .btn-primary:hover {
+    @apply shadow-medium transform -translate-y-0.5 scale-105;
+  }
+  
+  .btn-primary:active {
+    @apply transform translate-y-0 scale-100;
+  }
+  
+  /* Floating action button */
+  .fab {
+    @apply fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-r from-primary to-secondary rounded-full shadow-strong flex items-center justify-center text-white z-50;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  
+  .fab:hover {
+    @apply scale-110 shadow-xl;
+  }
+  
+  /* Mode toggle */
+  .mode-toggle {
+    @apply fixed top-4 left-1/2 transform -translate-x-1/2 bg-white/90 backdrop-blur-md rounded-full p-1 shadow-medium z-40;
+  }
+  
+  /* Voice mode focus text */
+  .voice-focus-text {
+    @apply text-2xl korean-text text-center px-8 leading-relaxed;
+    color: hsl(var(--voice-text));
+  }
+  
+  /* Map container */
+  .map-container {
+    @apply w-full h-full rounded-2xl overflow-hidden shadow-medium;
+  }
+  
+  /* Duration selector */
+  .duration-selector {
+    @apply grid grid-cols-3 gap-2 p-4;
+  }
+  
+  .duration-option {
+    @apply p-3 rounded-xl border-2 border-transparent bg-gray-50 text-center transition-all duration-200;
+  }
+  
+  .duration-option.selected {
+    @apply border-primary bg-primary/10 text-primary font-medium;
+  }
+  
+  /* Visibility options */
+  .visibility-grid {
+    @apply grid grid-cols-3 gap-3 p-4;
+  }
+  
+  .visibility-option {
+    @apply flex flex-col items-center p-4 rounded-xl border-2 border-transparent bg-gray-50 transition-all duration-200;
+  }
+  
+  .visibility-option.selected {
+    @apply border-primary bg-primary/10 text-primary;
+  }
+  
+  /* Post type selector */
+  .post-type-grid {
+    @apply grid grid-cols-2 gap-3 p-4;
+  }
+  
+  .post-type-option {
+    @apply flex items-center p-4 rounded-xl border-2 border-transparent bg-gray-50 transition-all duration-200;
+  }
+  
+  .post-type-option.selected {
+    @apply border-primary bg-primary/10 text-primary;
+  }
+}
+
+@layer utilities {
+  /* Animation utilities */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+  
+  .animate-slide-up {
+    animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+  
+  .animate-scale-in {
+    animation: scaleIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+  
+  .animate-pulse-gentle {
+    animation: pulseGentle 2s ease-in-out infinite;
+  }
+  
+  /* Korean text utilities */
+  .text-korean-lg {
+    @apply text-lg korean-text;
+  }
+  
+  .text-korean-xl {
+    @apply text-xl korean-text;
+  }
+  
+  .text-korean-2xl {
+    @apply text-2xl korean-text;
+  }
+}
+
+/* Keyframe animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulseGentle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Responsive design enhancements */
+@media (max-width: 640px) {
+  .korean-text {
+    line-height: 1.7;
+  }
+  
+  .post-card {
+    @apply rounded-xl;
+  }
+  
+  .fab {
+    @apply w-12 h-12 bottom-4 right-4;
+  }
+}
