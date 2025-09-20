@@ -33,14 +33,15 @@ export function HomeContent({ setCurrentAudio, onMapAreaClick }: HomeContentProp
   const { location, isKakaoMapAvailable } = useLocation()
 
   const fetchNearbyPosts = async () => {
-    if (!location) return
+    if (!location) return;
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      console.log("[v0] 근처 게시물 요청:", location)
+      console.log("[v0] 근처 게시물 요청:", location);
 
+      // ✅ '/posts/nearby' 부분을 삭제하고 알려주신 기본 주소를 사용합니다.
       const response = await fetch(
-        `https://api.herehear.p-e.kr/posts/nearby?lat=${location.lat}&lng=${location.lng}&radius=1000`,
+        `https://api.herehear.p-e.kr/?lat=${location.lat}&lng=${location.lng}&radius=1000`,
         {
           method: "GET",
           headers: {
@@ -48,26 +49,24 @@ export function HomeContent({ setCurrentAudio, onMapAreaClick }: HomeContentProp
           },
           mode: "cors",
         },
-      )
+      );
 
       if (response.ok) {
-        const posts = await response.json()
-        console.log("[v0] 근처 게시물 로드 성공:", posts)
-        setNearbyContent(posts)
+        const posts = await response.json();
+        console.log("[v0] 근처 게시물 로드 성공:", posts);
+        setNearbyContent(posts);
       } else {
-        console.error("[v0] 게시물 로드 실패:", response.status)
-        // 실패 시 더미 데이터 사용
-        setNearbyContent(getDummyPosts())
+        console.error("[v0] 게시물 로드 실패:", response.status);
+        setNearbyContent(getDummyPosts());
       }
     } catch (error) {
-      console.error("[v0] 게시물 로드 오류:", error)
-      // 오류 시 더미 데이터 사용
-      setNearbyContent(getDummyPosts())
+      console.error("[v0] 게시물 로드 오류:", error);
+      setNearbyContent(getDummyPosts());
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
-
+  
   const getDummyPosts = (): Post[] => [
     {
       id: 1,

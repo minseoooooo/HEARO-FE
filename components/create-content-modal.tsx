@@ -12,6 +12,7 @@ interface CreateContentModalProps {
 }
 
 export function CreateContentModal({ onClose }: CreateContentModalProps) {
+
   const [inputMode, setInputMode] = useState("text")
   const [content, setContent] = useState("")
   const [category, setCategory] = useState("소설")
@@ -62,27 +63,22 @@ export function CreateContentModal({ onClose }: CreateContentModalProps) {
         const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm;codecs=opus" })
         setAudioBlob(audioBlob)
         
-        // Create URL for audio playback
         const url = URL.createObjectURL(audioBlob)
         setAudioUrl(url)
         
         stream.getTracks().forEach((track) => track.stop())
       }
 
-      mediaRecorder.start(1000) // 1초마다 데이터 수집
+      mediaRecorder.start(1000)
       setIsRecording(true)
       setRecordingTime(0)
 
-      // Clear any existing timer
       if (timerRef.current) {
         clearInterval(timerRef.current)
       }
 
       timerRef.current = setInterval(() => {
-        setRecordingTime((prev) => {
-          console.log("Recording time:", prev + 1)
-          return prev + 1
-        })
+        setRecordingTime((prev) => prev + 1)
       }, 1000)
 
       console.log("[v0] 음성 녹음 시작")
@@ -101,7 +97,6 @@ export function CreateContentModal({ onClose }: CreateContentModalProps) {
         clearInterval(timerRef.current)
         timerRef.current = null
       }
-
       console.log("[v0] 음성 녹음 중지")
     }
   }
@@ -120,83 +115,89 @@ export function CreateContentModal({ onClose }: CreateContentModalProps) {
     }
   }
 
-  const handleAudioEnded = () => {
-    setIsPlaying(false)
-  }
-
+  const handleAudioEnded = () => setIsPlaying(false)
   const handleAudioError = () => {
     setIsPlaying(false)
     console.error("Audio playback error")
   }
-
+  
   const handleSubmit = async () => {
-    if ((!content && !audioBlob) || !location) {
+    if ((inputMode === 'text' && !content) || (inputMode === 'voice' && !audioBlob) || !location) {
       alert("내용을 입력하거나 음성을 녹음해주세요.")
       return
     }
 
     setIsSubmitting(true)
 
-    try {
-      const formData = new FormData()
+try {
+      let response;
+      
+      if (inputMode === 'text') {
+        // ✨ 텍스트 모드는 기존과 동일하게 유지됩니다.
+        const postData = {
+          type: 'text',
+          content: content,
+          category: category,
+          privacy: privacy,
+          duration: duration,
+          location: { lat: location.lat, lng: location.lng, address: location.address },
+          timestamp: new Date().toISOString(),
+        };
+        
+        console.log("[v0] 텍스트 게시물(JSON) 전송 시도:", postData);
+        response = await fetch("https://api.herehear.p-e.kr/entry/text", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(postData),
+          mode: "cors",
+        });
 
-      const postData = {
-        type: inputMode,
-        content: inputMode === "text" ? content : "",
-        category,
-        privacy,
-        duration,
-        location: {
-          lat: location.lat,
-          lng: location.lng,
-          address: location.address,
-        },
-        timestamp: new Date().toISOString(),
+      } else { // ✨ 음성 모드 로직 변경
+        
+        // 1. URL에 포함할 위치 정보(rq)를 만듭니다.
+        const locationQuery = {
+          latitude: location.lat,
+          longitude: location.lng,
+        };
+        const encodedQuery = encodeURIComponent(JSON.stringify(locationQuery));
+        const endpoint = `https://api.herehear.p-e.kr/entry/audio?rq=${encodedQuery}`;
+
+        // 2. 본문(body)에는 오직 음성 파일만 담습니다.
+        const formData = new FormData();
+        if (audioBlob) {
+          formData.append("file", audioBlob, `voice_${Date.now()}.webm`);
+        }
+        
+        console.log(`[v0] 음성 게시물(FormData) 전송 시도: ${endpoint}`);
+        response = await fetch(endpoint, {
+          method: "POST",
+          body: formData,
+          mode: "cors",
+        });
       }
-
-      formData.append("data", JSON.stringify(postData))
-
-      if (inputMode === "voice" && audioBlob) {
-        formData.append("audio", audioBlob, `voice_${Date.now()}.webm`)
-      }
-
-      console.log("[v0] 게시물 전송 시도:", postData)
-
-      const response = await fetch("https://api.herehear.p-e.kr/posts", {
-        method: "POST",
-        body: formData,
-        mode: "cors",
-      })
 
       if (response.ok) {
-        const result = await response.json()
-        console.log("[v0] 게시물 전송 성공:", result)
-        alert("게시물이 성공적으로 등록되었습니다!")
-        onClose()
+        const result = await response.json().catch(() => ({}));
+        console.log("[v0] 게시물 전송 성공:", result);
+        alert("게시물이 성공적으로 등록되었습니다!");
+        onClose();
       } else {
-        console.error("[v0] 게시물 전송 실패:", response.status)
-        alert("게시물 등록에 실패했습니다.")
+        console.error("[v0] 게시물 전송 실패:", response.status, await response.text());
+        alert(`게시물 등록에 실패했습니다. (에러 코드: ${response.status})`);
       }
     } catch (error) {
-      console.error("[v0] 게시물 전송 오류:", error)
-      alert("네트워크 오류가 발생했습니다.")
+      console.error("[v0] 게시물 전송 오류:", error);
+      alert("네트워크 오류가 발생했습니다.");
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
   }
 
   useEffect(() => {
     return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current)
-      }
-      if (mediaRecorderRef.current && isRecording) {
-        mediaRecorderRef.current.stop()
-      }
-      // Clean up audio URL
-      if (audioUrl) {
-        URL.revokeObjectURL(audioUrl)
-      }
+      if (timerRef.current) clearInterval(timerRef.current)
+      if (mediaRecorderRef.current && isRecording) mediaRecorderRef.current.stop()
+      if (audioUrl) URL.revokeObjectURL(audioUrl)
     }
   }, [isRecording, audioUrl])
 
@@ -209,7 +210,6 @@ export function CreateContentModal({ onClose }: CreateContentModalProps) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
-        {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <h2 className="text-lg font-semibold">새 게시물</h2>
           <Button variant="ghost" size="sm" onClick={onClose}>
@@ -218,7 +218,6 @@ export function CreateContentModal({ onClose }: CreateContentModalProps) {
         </div>
 
         <div className="p-4 space-y-6">
-          {/* Input Mode Toggle */}
           <div className="space-y-3">
             <h3 className="font-medium">게시물 형태</h3>
             <div className="flex space-x-2">
@@ -243,12 +242,11 @@ export function CreateContentModal({ onClose }: CreateContentModalProps) {
             </div>
           </div>
 
-          {/* Content Input */}
           <div className="space-y-3">
             <h3 className="font-medium">내용</h3>
             {inputMode === "text" ? (
               <Textarea
-                placeholder="무슨 일이 일어났고 있나요?"
+                placeholder="무슨 일이 일어나고 있나요?"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 className="min-h-[120px] resize-none"
@@ -261,50 +259,23 @@ export function CreateContentModal({ onClose }: CreateContentModalProps) {
                         isRecording ? "bg-red-100 animate-pulse" : "bg-muted"
                       }`}
                     >
-                      {isRecording ? (
-                        <Square className="w-8 h-8 text-red-500" />
-                      ) : (
-                        <Mic className="w-8 h-8 text-muted-foreground" />
-                      )}
+                      {isRecording ? <Square className="w-8 h-8 text-red-500" /> : <Mic className="w-8 h-8 text-muted-foreground" />}
                     </div>
                     <div>
                       <p className="font-medium">
-                        {isRecording
-                          ? `녹음 중... ${formatTime(recordingTime)}`
-                          : audioBlob
-                            ? "녹음 완료"
-                            : "음성 녹음하기"}
+                        {isRecording ? `녹음 중... ${formatTime(recordingTime)}` : audioBlob ? "녹음 완료" : "음성 녹음하기"}
                       </p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        {isRecording
-                          ? "말씀해주세요"
-                          : audioBlob
-                            ? "재생하거나 다시 녹음할 수 있습니다"
-                            : "버튼을 눌러 녹음을 시작하세요"}
+                        {isRecording ? "말씀해주세요" : audioBlob ? "재생하거나 다시 녹음할 수 있습니다" : "버튼을 눌러 녹음을 시작하세요"}
                       </p>
                     </div>
                     
-                    {/* Audio Player */}
                     {audioBlob && audioUrl && (
                       <div className="space-y-2">
-                        <audio
-                          ref={audioRef}
-                          src={audioUrl}
-                          onEnded={handleAudioEnded}
-                          onError={handleAudioError}
-                          className="w-full"
-                        />
+                        <audio ref={audioRef} src={audioUrl} onEnded={handleAudioEnded} onError={handleAudioError} className="hidden" />
                         <div className="flex justify-center space-x-2">
-                          <Button
-                            onClick={isPlaying ? pauseAudio : playAudio}
-                            size="sm"
-                            variant="outline"
-                          >
-                            {isPlaying ? (
-                              <Pause className="w-4 h-4 mr-1" />
-                            ) : (
-                              <Play className="w-4 h-4 mr-1" />
-                            )}
+                          <Button onClick={isPlaying ? pauseAudio : playAudio} size="sm" variant="outline">
+                            {isPlaying ? <Pause className="w-4 h-4 mr-1" /> : <Play className="w-4 h-4 mr-1" />}
                             {isPlaying ? "일시정지" : "재생"}
                           </Button>
                         </div>
@@ -312,10 +283,7 @@ export function CreateContentModal({ onClose }: CreateContentModalProps) {
                     )}
                     
                     <div className="space-x-2">
-                      <Button
-                        onClick={isRecording ? stopRecording : startRecording}
-                        className={isRecording ? "bg-red-500 hover:bg-red-600" : ""}
-                      >
+                      <Button onClick={isRecording ? stopRecording : startRecording} className={isRecording ? "bg-red-500 hover:bg-red-600" : ""}>
                         {isRecording ? "녹음 중지" : audioBlob ? "다시 녹음" : "녹음 시작"}
                       </Button>
                       {audioBlob && (
@@ -335,57 +303,36 @@ export function CreateContentModal({ onClose }: CreateContentModalProps) {
               </Card>
             )}
           </div>
-
-          {/* Category */}
+          
           <div className="space-y-3">
             <h3 className="font-medium">카테고리</h3>
             <div className="flex space-x-2">
               {categories.map((cat) => (
-                <Button
-                  key={cat.value}
-                  variant={category === cat.value ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setCategory(cat.value)}
-                  className="flex-1"
-                >
+                <Button key={cat.value} variant={category === cat.value ? "default" : "outline"} size="sm" onClick={() => setCategory(cat.value)} className="flex-1">
                   <cat.icon className={`w-4 h-4 mr-2 text-${cat.color}`} />
                   {cat.value}
                 </Button>
               ))}
             </div>
           </div>
-
-          {/* Duration */}
+          
           <div className="space-y-3">
             <h3 className="font-medium">유지 시간</h3>
             <div className="grid grid-cols-3 gap-2">
               {durations.map((dur) => (
-                <Button
-                  key={dur}
-                  variant={duration === dur ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setDuration(dur)}
-                  className="text-xs"
-                >
+                <Button key={dur} variant={duration === dur ? "default" : "outline"} size="sm" onClick={() => setDuration(dur)} className="text-xs">
                   <Clock className="w-3 h-3 mr-1" />
                   {dur}
                 </Button>
               ))}
             </div>
           </div>
-
-          {/* Privacy */}
+          
           <div className="space-y-3">
             <h3 className="font-medium">공개 범위</h3>
             <div className="space-y-2">
               {privacyOptions.map((option) => (
-                <Card
-                  key={option.value}
-                  className={`p-3 cursor-pointer transition-all ${
-                    privacy === option.value ? "ring-2 ring-primary bg-primary/5" : "hover:bg-muted/50"
-                  }`}
-                  onClick={() => setPrivacy(option.value)}
-                >
+                <Card key={option.value} className={`p-3 cursor-pointer transition-all ${privacy === option.value ? "ring-2 ring-primary bg-primary/5" : "hover:bg-muted/50"}`} onClick={() => setPrivacy(option.value)}>
                   <div className="flex items-center space-x-3">
                     <option.icon className="w-5 h-5 text-primary" />
                     <div>
@@ -397,13 +344,8 @@ export function CreateContentModal({ onClose }: CreateContentModalProps) {
               ))}
             </div>
           </div>
-
-          {/* Submit Button */}
-          <Button
-            className="w-full"
-            disabled={(!content && !audioBlob) || isSubmitting || !location}
-            onClick={handleSubmit}
-          >
+          
+          <Button className="w-full" disabled={(!content && !audioBlob) || isSubmitting || !location} onClick={handleSubmit}>
             {isSubmitting ? "게시 중..." : "게시하기"}
           </Button>
 

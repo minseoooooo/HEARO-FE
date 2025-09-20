@@ -72,8 +72,8 @@ export function LocationProvider({ children }: { children: ReactNode }) {
 
       if (response.ok) {
         console.log("[v0] 위치 정보 전송 성공")
-        const result = await response.json()
-        console.log("[v0] 서버 응답:", result)
+        // const result = await response.json()
+        // console.log("[v0] 서버 응답:", result)
       } else {
         console.error("[v0] 서버 응답 오류:", response.status, response.statusText)
       }
