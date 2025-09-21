@@ -1,0 +1,27 @@
+image: node:18
+
+pipelines:
+  default:
+    - step:
+        name: Build and Deploy to S3
+        caches:
+          - node
+        script:
+          # 1. 의존성 설치
+          - npm install
+
+          # 2. 빌드
+          - npm run build
+
+          # 3. AWS CLI 설치
+          - apt-get update && apt-get install -y python3-pip
+          - pip3 install awscli
+
+          # 4. S3 업로드 (build/ 또는 dist/ 폴더)
+          - aws s3 sync build/ s3://$S3_BUCKET --delete
+
+          # 5. CloudFront 캐시 무효화
+          - aws cloudfront create-invalidation \
+              --distribution-id $CLOUDFRONT_DISTRIBUTION_ID \
+              --paths "/*"
+
