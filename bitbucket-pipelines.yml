@@ -14,7 +14,7 @@ pipelines:
           - npm install
 
           # 2. 빌드
-          - TRUSTED_PROXY=* WEBUI_URL=https://www.herehearo.com npm run build
+          - npm run build
 
           # 3. AWS CLI 설치
           - apt-get update && apt-get install -y awscli
