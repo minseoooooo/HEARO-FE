@@ -21,7 +21,5 @@ pipelines:
           - aws s3 sync out/ s3://$AWS_BUCKET_NAME --delete
 
           # 5. CloudFront 캐시 무효화
-          - aws cloudfront create-invalidation \
-              --distribution-id $CLOUDFRONT_DISTRIBUTION_ID \
-              --paths "/*"
+          - aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_DISTRIBUTION_ID --paths "/*"
 
