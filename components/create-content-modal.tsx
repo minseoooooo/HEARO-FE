@@ -137,10 +137,8 @@ try {
         const postData = {
           type: 'text',
           content: content,
-          category: category,
-          privacy: privacy,
-          duration: duration,
-          location: { lat: location.lat, lng: location.lng, address: location.address },
+          latitude: location.lat,
+          longitude: location.lng,
           timestamp: new Date().toISOString(),
         };
         
