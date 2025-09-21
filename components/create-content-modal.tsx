@@ -45,10 +45,14 @@ export function CreateContentModal({ onClose }: CreateContentModalProps) {
 
   const startRecording = async () => {
     try {
+      // 🎤 iOS 호환 mimeType 감지
+      let mimeType = "audio/webm;codecs=opus"
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = "audio/mp4" // iOS Safari fallback
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: "audio/webm;codecs=opus",
-      })
+      const mediaRecorder = new MediaRecorder(stream, { mimeType })
 
       mediaRecorderRef.current = mediaRecorder
       audioChunksRef.current = []
@@ -60,7 +64,7 @@ export function CreateContentModal({ onClose }: CreateContentModalProps) {
       }
 
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm;codecs=opus" })
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType })
         setAudioBlob(audioBlob)
         
         const url = URL.createObjectURL(audioBlob)
@@ -82,9 +86,17 @@ export function CreateContentModal({ onClose }: CreateContentModalProps) {
       }, 1000)
 
       console.log("[v0] 음성 녹음 시작")
-    } catch (error) {
+    } catch (error: any) {
       console.error("[v0] 마이크 접근 실패:", error)
-      alert("마이크에 접근할 수 없습니다. 브라우저 설정을 확인해주세요.")
+      if (error.name === "NotAllowedError") {
+        alert("마이크 권한이 거부되었습니다. Safari 설정에서 허용해주세요.")
+      } else if (error.name === "NotFoundError") {
+        alert("마이크 장치를 찾을 수 없습니다.")
+      } else if (error.name === "SecurityError") {
+        alert("HTTPS 환경에서만 접근 가능합니다.")
+      } else {
+        alert("알 수 없는 오류가 발생했습니다.")
+      }
     }
   }
 
