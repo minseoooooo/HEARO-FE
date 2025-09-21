@@ -18,7 +18,7 @@ pipelines:
 
 
           # 4. S3 업로드 (build/ 또는 dist/ 폴더)
-          - aws s3 sync build/ s3://$AWS_BUCKET_NAME --delete
+          - aws s3 sync out/ s3://$AWS_BUCKET_NAME --delete
 
           # 5. CloudFront 캐시 무효화
           - aws cloudfront create-invalidation \
