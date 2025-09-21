@@ -198,15 +198,15 @@ export function HomeContent({ setCurrentAudio, onMapAreaClick }: HomeContentProp
                 <span className="text-sm font-semibold text-primary text-primary px-3 py-1 rounded-full">
                   {item.type}
                 </span>
-                <span className="text-sm text-gray-500">{item.category}</span>
-                <span className="text-sm text-gray-400">• {item.distance}</span>
+                <span className="text-sm text-gray-500">{item.type}</span>
+                <span className="text-sm text-gray-400">• {item.distance + "m"}</span>
               </div>
               <Button
                 variant="ghost"
                 size="default"
-                onClick={() => handleTextToSpeech(item.id, item.content, item.audioUrl)}
+                onClick={() => handleTextToSpeech(item.id, item.textContent, item.audioContentUrl)}
                 className="h-10 w-10 p-0 hover:bg-pink-50 rounded-full"
-                title={item.hasAudio ? "원본 음성 재생" : "텍스트 음성 변환"}
+                title={item.type == "AUDIO" ? "원본 음성 재생" : "텍스트 음성 변환"}
               >
                 {playingPost === item.id ? (
                   <VolumeX className="w-5 h-5 text-primary" />
@@ -216,7 +216,7 @@ export function HomeContent({ setCurrentAudio, onMapAreaClick }: HomeContentProp
               </Button>
             </div>
 
-            <p className="text-gray-900 leading-relaxed text-base">{item.content}</p>
+            <p className="text-gray-900 leading-relaxed text-base">{item.textContent}</p>
 
             <div className="flex items-center justify-between pt-2">
               <div className="flex items-center space-x-6">
