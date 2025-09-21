@@ -40,10 +40,9 @@ function AppContent() {
     return <AudioPlayer audio={currentAudio} onClose={() => setCurrentAudio(null)} />
   }
 
-  // 콘텐츠 생성 모달
-  if (showCreateModal) {
-    return <CreateContentModal onClose={() => setShowCreateModal(false)} />
-  }
+    if (showCreateModal) {
+        return <CreateContentModal onClose={() => setShowCreateModal(false)} />
+    }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -83,7 +82,7 @@ function AppContent() {
           <div className="p-4">
             <div className="text-center py-8">
               <div className="w-20 h-20 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <User className="w-10 h-10 text-pink-400" />
+                <User className="w-10 h-10 text-primary" />
               </div>
               <h2 className="text-2xl font-bold text-gray-900 mb-2">익명 사용자</h2>
               <p className="text-gray-600">레벨 2 · 가입 30일</p>
@@ -95,11 +94,11 @@ function AppContent() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-4 bg-white rounded-lg">
                     <span className="text-gray-900">모드</span>
-                    <span className="text-pink-400">시각 모드 ›</span>
+                    <span className="text-primary">시각 모드 ›</span>
                   </div>
                   <div className="flex items-center justify-between p-4 bg-white rounded-lg">
                     <span className="text-gray-900">글자 크기</span>
-                    <span className="text-pink-400">16px ›</span>
+                    <span className="text-primary">16px ›</span>
                   </div>
                 </div>
               </div>
@@ -113,7 +112,7 @@ function AppContent() {
           <button
             onClick={() => setCurrentScreen("home")}
             className={`flex flex-col items-center py-2 px-4 ${
-              currentScreen === "home" ? "text-pink-400" : "text-gray-600"
+              currentScreen === "home" ? "text-primary" : "text-gray-600"
             }`}
           >
             <Home className="w-6 h-6 mb-1" />
@@ -122,7 +121,7 @@ function AppContent() {
           <button
             onClick={() => setCurrentScreen("listen")}
             className={`flex flex-col items-center py-2 px-4 ${
-              currentScreen === "listen" ? "text-pink-400" : "text-gray-600"
+              currentScreen === "listen" ? "text-primary" : "text-gray-600"
             }`}
           >
             <Headphones className="w-6 h-6 mb-1" />
@@ -131,7 +130,7 @@ function AppContent() {
           <button
             onClick={() => setCurrentScreen("timeline")}
             className={`flex flex-col items-center py-2 px-4 ${
-              currentScreen === "timeline" ? "text-pink-400" : "text-gray-600"
+              currentScreen === "timeline" ? "text-primary" : "text-gray-600"
             }`}
           >
             <Clock className="w-6 h-6 mb-1" />
@@ -140,7 +139,7 @@ function AppContent() {
           <button
             onClick={() => setCurrentScreen("profile")}
             className={`flex flex-col items-center py-2 px-4 ${
-              currentScreen === "profile" ? "text-pink-400" : "text-gray-600"
+              currentScreen === "profile" ? "text-primary" : "text-gray-600"
             }`}
           >
             <User className="w-6 h-6 mb-1" />
