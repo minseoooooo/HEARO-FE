@@ -218,25 +218,25 @@ export function HomeContent({ setCurrentAudio, onMapAreaClick }: HomeContentProp
 
             <p className="text-gray-900 leading-relaxed text-base">{item.textContent}</p>
 
-            <div className="flex items-center justify-between pt-2">
-              <div className="flex items-center space-x-6">
-                <button className="flex items-center space-x-1 text-gray-500 hover:text-pink-400 transition-colors">
-                  <Heart className="w-5 h-5" />
-                  <span className="text-sm font-medium">{item.likes}</span>
-                </button>
-                <button className="flex items-center space-x-1 text-gray-500 hover:text-pink-400 transition-colors">
-                  <MessageCircle className="w-5 h-5" />
-                  <span className="text-sm font-medium">{item.comments}</span>
-                </button>
-                <button className="flex items-center space-x-1 text-gray-500 hover:text-pink-400 transition-colors">
-                  <Share2 className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="text-right">
-                <p className="text-xs text-gray-400">{item.time}</p>
-                <p className="text-xs text-gray-400">{item.location}</p>
-              </div>
-            </div>
+            {/*<div className="flex items-center justify-between pt-2">*/}
+            {/*  <div className="flex items-center space-x-6">*/}
+            {/*    <button className="flex items-center space-x-1 text-gray-500 hover:text-pink-400 transition-colors">*/}
+            {/*      <Heart className="w-5 h-5" />*/}
+            {/*      <span className="text-sm font-medium">{item.likes}</span>*/}
+            {/*    </button>*/}
+            {/*    <button className="flex items-center space-x-1 text-gray-500 hover:text-pink-400 transition-colors">*/}
+            {/*      <MessageCircle className="w-5 h-5" />*/}
+            {/*      <span className="text-sm font-medium">{item.comments}</span>*/}
+            {/*    </button>*/}
+            {/*    <button className="flex items-center space-x-1 text-gray-500 hover:text-pink-400 transition-colors">*/}
+            {/*      <Share2 className="w-5 h-5" />*/}
+            {/*    </button>*/}
+            {/*  </div>*/}
+            {/*  <div className="text-right">*/}
+            {/*    <p className="text-xs text-gray-400">{item.time}</p>*/}
+            {/*    <p className="text-xs text-gray-400">{item.location}</p>*/}
+            {/*  </div>*/}
+            {/*</div>*/}
           </Card>
         ))}
       </div>
