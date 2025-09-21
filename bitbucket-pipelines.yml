@@ -7,6 +7,9 @@ pipelines:
         caches:
           - node
         script:
+          # 0. .env 파일 생성
+          - echo "NEXT_PUBLIC_KAKAO_MAP_KEY=$NEXT_PUBLIC_KAKAO_MAP_KEY" > .env
+
           # 1. 의존성 설치
           - npm install
 
@@ -17,7 +20,7 @@ pipelines:
           - apt-get update && apt-get install -y awscli
 
 
-          # 4. S3 업로드 (build/ 또는 dist/ 폴더)
+          # 4. S3 업로드
           - aws s3 sync out/ s3://$AWS_BUCKET_NAME --delete
 
           # 5. CloudFront 캐시 무효화
