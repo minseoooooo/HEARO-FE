@@ -16,7 +16,6 @@ pipelines:
           # 2. 빌드
           - rm -rf .next out
           - npm run build
-          - npx next export
 
           # 3. AWS CLI 설치
           - apt-get update && apt-get install -y awscli
