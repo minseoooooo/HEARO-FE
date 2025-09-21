@@ -13,22 +13,16 @@ interface HomeContentProps {
 }
 
 interface Post {
-  id: number
-  type: string
-  category: string
-  content: string
-  likes: number
-  comments: number
-  time: string
-  distance: string
-  location: string
-  hasAudio: boolean
-  audioUrl?: string
+  id: number;                // 식별자
+  distance: number;          // 유저와의 거리 (m 단위, number)
+  textContent: string;       // 게시물 텍스트
+  audioContentUrl?: string;  // 오디오 Presigned URL (없을 수도 있음)
+  type: string;              // 게시물 타입 (예: "AUDIO", "TEXT")
 }
 
 export function HomeContent({ setCurrentAudio, onMapAreaClick }: HomeContentProps) {
   const [playingPost, setPlayingPost] = useState<number | null>(null)
-  const [nearbyContent, setNearbyContent] = useState<Post[]>([])
+  const [nearbyContent, setNearbyContent] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(false)
   const { location, isKakaoMapAvailable } = useLocation()
 
@@ -37,24 +31,25 @@ export function HomeContent({ setCurrentAudio, onMapAreaClick }: HomeContentProp
 
     setIsLoading(true);
     try {
-      console.log("[v0] 근처 게시물 요청:", location);
+      console.log("[v1] 근처 게시물 요청:", location);
 
-      // ✅ '/posts/nearby' 부분을 삭제하고 알려주신 기본 주소를 사용합니다.
-      const response = await fetch(
-        `https://api.herehear.p-e.kr/?lat=${location.lat}&lng=${location.lng}&radius=1000`,
-        {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-          },
-          mode: "cors",
+      const response = await fetch("http://localhost:8080/entry/text/read", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
         },
-      );
+        mode: "cors",
+        body: JSON.stringify({
+          latitude: location.lat,
+          longitude: location.lng,
+        }),
+      });
 
       if (response.ok) {
         const posts = await response.json();
         console.log("[v0] 근처 게시물 로드 성공:", posts);
-        setNearbyContent(posts);
+        setNearbyContent(Array.isArray(posts.textEntryRsList) ? posts.textEntryRsList : []);
       } else {
         console.error("[v0] 게시물 로드 실패:", response.status);
         setNearbyContent(getDummyPosts());
@@ -70,39 +65,22 @@ export function HomeContent({ setCurrentAudio, onMapAreaClick }: HomeContentProp
   const getDummyPosts = (): Post[] => [
     {
       id: 1,
-      type: "익명",
-      category: "공개",
-      content: "이 카페 진짜 분위기 좋다! 좋다! 작업하기 딱이야 ☕",
-      likes: 12,
-      comments: 3,
-      time: "23시간 15분",
-      distance: "15m",
-      location: location?.address || "강남역 2번 출구",
-      hasAudio: false,
+      type: "TEXT",
+      textContent: "이 카페 진짜 분위기 좋다! 작업하기 딱이야 ☕",
+      distance: 15, // ✅ number로
     },
     {
       id: 2,
-      type: "레벨 3 사용자",
-      category: "공개",
-      content: "여기 주차 어려워요. 근처 공영주차장 이용하세요!",
-      likes: 28,
-      comments: 7,
-      time: "8시간 42분",
-      distance: "32m",
-      location: location?.address || "강남역 근처",
-      hasAudio: false,
+      type: "TEXT",
+      textContent: "여기 주차 어려워요. 근처 공영주차장 이용하세요!",
+      distance: 32,
     },
     {
       id: 3,
-      type: "익명",
-      category: "친구",
-      content: "🎵 이 노래 좋다... (음성에서 변환됨)",
-      likes: 5,
-      comments: 1,
-      time: "4시간 18분",
-      distance: "68m",
-      location: location?.address || "강남역 지하상가",
-      hasAudio: true,
+      type: "AUDIO",
+      textContent: "🎵 이 노래 좋다... (음성에서 변환됨)",
+      distance: 68,
+      audioContentUrl: "https://dummy-s3-url.com/audio/sample.webm", // ✅ 예시 URL
     },
   ]
 
