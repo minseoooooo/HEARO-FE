@@ -61,7 +61,7 @@ export function HomeContent({ setCurrentAudio, onMapAreaClick }: HomeContentProp
       setIsLoading(false);
     }
   }
-  
+
   const getDummyPosts = (): Post[] => [
     {
       id: 1,
@@ -96,39 +96,32 @@ export function HomeContent({ setCurrentAudio, onMapAreaClick }: HomeContentProp
       if ("speechSynthesis" in window) {
         window.speechSynthesis.cancel()
       }
-    } else {
-      setPlayingPost(postId)
+      return;
+    }
 
-      if (audioUrl) {
-        try {
-          const response = await fetch(`https://api.herehear.p-e.kr/audio/${audioUrl}`, {
-            mode: "cors",
-          })
-          if (response.ok) {
-            const audioBlob = await response.blob()
-            const audioUrl = URL.createObjectURL(audioBlob)
-            const audio = new Audio(audioUrl)
-            audio.onended = () => setPlayingPost(null)
-            audio.onerror = () => {
-              setPlayingPost(null)
-              console.error("[v0] 음성 재생 실패")
-            }
-            audio.play()
-            return
-          }
-        } catch (error) {
-          console.error("[v0] 음성 파일 로드 실패:", error)
-        }
+    setPlayingPost(postId);
+
+    if (audioUrl) {
+      try {
+        const audio = new Audio(audioUrl); // ✅ Presigned URL 바로 사용
+        audio.onended = () => setPlayingPost(null);
+        audio.onerror = () => {
+          setPlayingPost(null);
+          console.error("[v0] 음성 재생 실패");
+        };
+
+        await audio.play();
+        return;
+      } catch (error) {
+        setPlayingPost(null);
+        console.error("[v0] 음성 파일 로드 실패:", error);
       }
-
-      // 음성 파일이 없거나 실패 시 TTS 사용
+    } else {
+      // audioUrl이 없으면 TTS로 읽기
       if ("speechSynthesis" in window) {
-        const utterance = new SpeechSynthesisUtterance(content)
-        utterance.lang = "ko-KR"
-        utterance.rate = 0.9
-        utterance.onend = () => setPlayingPost(null)
-        utterance.onerror = () => setPlayingPost(null)
-        window.speechSynthesis.speak(utterance)
+        const utterance = new SpeechSynthesisUtterance(content);
+        utterance.onend = () => setPlayingPost(null);
+        window.speechSynthesis.speak(utterance);
       }
     }
   }
