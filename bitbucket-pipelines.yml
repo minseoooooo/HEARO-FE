@@ -14,8 +14,8 @@ pipelines:
           - npm run build
 
           # 3. AWS CLI 설치
-          - apt-get update && apt-get install -y python3-pip
-          - pip3 install awscli
+          - apt-get update && apt-get install -y awscli
+
 
           # 4. S3 업로드 (build/ 또는 dist/ 폴더)
           - aws s3 sync build/ s3://$S3_BUCKET --delete
