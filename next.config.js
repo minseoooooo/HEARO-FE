@@ -2,6 +2,7 @@ console.log("✅ next.config.js loaded!!!");
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'export',
+  distDir: 'out',
   eslint: {
     ignoreDuringBuilds: true,
   },
