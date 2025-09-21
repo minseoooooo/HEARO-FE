@@ -33,7 +33,7 @@ export function HomeContent({ setCurrentAudio, onMapAreaClick }: HomeContentProp
     try {
       console.log("[v1] 근처 게시물 요청:", location);
 
-      const response = await fetch("http://localhost:8080/entry/text/read", {
+      const response = await fetch("https://api.herehear.p-e.kr/entry/text/read", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
