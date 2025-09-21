@@ -61,6 +61,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
           Accept: "application/json",
         },
         body: JSON.stringify({
+          userHandle: "user1234", // todo 나중에 실제 사용자 핸들로 교체
           latitude: locationData.lat,
           longitude: locationData.lng,
         }),
