@@ -16,12 +16,14 @@ pipelines:
           # 2. 빌드
           - rm -rf .next out
           - npm run build
+          - ls out/
 
           # 3. AWS CLI 설치
           - apt-get update && apt-get install -y awscli
 
 
           # 4. S3 업로드
+          - aws s3 ls s3://$AWS_BUCKET_NAME/
           - aws s3 sync out/ s3://$AWS_BUCKET_NAME --delete
 
           # 5. CloudFront 캐시 무효화
