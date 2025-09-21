@@ -14,6 +14,7 @@ pipelines:
           - npm install
 
           # 2. 빌드
+          - rm -rf .next out
           - npm run build
 
           # 3. AWS CLI 설치
