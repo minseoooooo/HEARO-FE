@@ -67,7 +67,7 @@ const TextMode = () => {
         {/* Map placeholder */}
         <div className="map-container h-64 mb-6 bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
           <div className="text-center text-gray-600">
-            <MapPin className="w-12 h-12 mx-auto mb-2 text-primary" />
+            <MapPin className="w-12 h-12 mx-auto mb-2 primary" />
             <p className="korean-text">지도 영역</p>
             <p className="text-sm text-gray-500">근처 게시물들이 표시됩니다</p>
           </div>

@@ -149,7 +149,7 @@ export function GeofencingListener() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <MapPin className="w-6 h-6 text-pink-400" />
+              <MapPin className="w-6 h-6 text-primary" />
               <div>
                 <h2 className="text-lg font-bold text-gray-900">지오펜싱 듣기 모드</h2>
                 <p className="text-sm text-gray-500">반경 {currentRadius}m 내 음성 메시지 자동 재생</p>
@@ -191,7 +191,7 @@ export function GeofencingListener() {
                   className="w-full"
                 />
               </div>
-              <span className="text-lg font-bold text-pink-400 min-w-[60px] text-right">{currentRadius}m</span>
+              <span className="text-lg font-bold text-primary min-w-[60px] text-right">{currentRadius}m</span>
             </div>
           </div>
         </div>
@@ -220,9 +220,9 @@ export function GeofencingListener() {
                 className="h-10 w-10 p-0 hover:bg-pink-50 rounded-full"
               >
                 {currentlyPlaying === message.id ? (
-                  <VolumeX className="w-5 h-5 text-pink-400" />
+                  <VolumeX className="w-5 h-5 text-primary" />
                 ) : (
-                  <Volume2 className="w-5 h-5 text-pink-400" />
+                  <Volume2 className="w-5 h-5 text-primary" />
                 )}
               </Button>
             </div>

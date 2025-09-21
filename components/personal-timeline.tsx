@@ -198,7 +198,7 @@ export function PersonalTimeline() {
 
       <div className="grid grid-cols-2 gap-4">
         <Card className="p-6 text-center bg-white rounded-2xl shadow-sm border-0">
-          <p className="text-4xl font-bold text-pink-400 mb-2">{stats.createdCount}</p>
+          <p className="text-4xl font-bold text-primary mb-2">{stats.createdCount}</p>
           <p className="text-sm text-gray-600 font-medium">내가 남긴 기록</p>
         </Card>
         <Card className="p-6 text-center bg-white rounded-2xl shadow-sm border-0">
@@ -281,9 +281,9 @@ function TimelineView({
                           className="h-8 w-8 p-0 hover:bg-pink-50 rounded-full"
                         >
                           {playingRecord === record.id ? (
-                            <VolumeX className="w-4 h-4 text-pink-400" />
+                            <VolumeX className="w-4 h-4 text-primary" />
                           ) : (
-                            <Volume2 className="w-4 h-4 text-pink-400" />
+                            <Volume2 className="w-4 h-4 text-primary" />
                           )}
                         </Button>
                       )}
@@ -344,9 +344,9 @@ function TimelineView({
                           className="h-8 w-8 p-0 hover:bg-pink-50 rounded-full"
                         >
                           {playingRecord === record.id ? (
-                            <VolumeX className="w-4 h-4 text-pink-400" />
+                            <VolumeX className="w-4 h-4 text-primary" />
                           ) : (
-                            <Volume2 className="w-4 h-4 text-pink-400" />
+                            <Volume2 className="w-4 h-4 text-primary" />
                           )}
                         </Button>
                       )}

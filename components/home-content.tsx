@@ -163,7 +163,7 @@ export function HomeContent({ setCurrentAudio, onMapAreaClick }: HomeContentProp
         title="지도 영역을 눌러서 현재 위치를 갱신하세요"
       >
         <div className="flex flex-col items-center justify-center text-center space-y-2">
-          <MapPin className="w-8 h-8 text-pink-400" />
+          <MapPin className="w-8 h-8 text-primary" />
           <div>
             <p className="font-semibold text-lg text-gray-900">지도 영역</p>
             <p className="text-sm text-gray-500">근처 게시물이 표시됩니다</p>
@@ -195,7 +195,7 @@ export function HomeContent({ setCurrentAudio, onMapAreaClick }: HomeContentProp
           <Card key={item.id} className="p-4 space-y-3 bg-white rounded-2xl shadow-sm border-0">
             <div className="flex items-start justify-between">
               <div className="flex items-center space-x-2">
-                <span className="text-sm font-semibold text-pink-600 bg-pink-100 px-3 py-1 rounded-full">
+                <span className="text-sm font-semibold text-primary text-primary px-3 py-1 rounded-full">
                   {item.type}
                 </span>
                 <span className="text-sm text-gray-500">{item.category}</span>
@@ -209,9 +209,9 @@ export function HomeContent({ setCurrentAudio, onMapAreaClick }: HomeContentProp
                 title={item.hasAudio ? "원본 음성 재생" : "텍스트 음성 변환"}
               >
                 {playingPost === item.id ? (
-                  <VolumeX className="w-5 h-5 text-pink-400" />
+                  <VolumeX className="w-5 h-5 text-primary" />
                 ) : (
-                  <Volume2 className={`w-5 h-5 ${item.hasAudio ? "text-pink-400" : "text-gray-400"}`} />
+                  <Volume2 className={`w-5 h-5 ${item.type == "AUDIO" ? "text-primary" : "text-gray-400"}`} />
                 )}
               </Button>
             </div>
