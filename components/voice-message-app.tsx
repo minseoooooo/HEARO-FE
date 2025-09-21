@@ -11,6 +11,7 @@ import { PersonalTimeline } from "./personal-timeline"
 import { LocationProvider, useLocation } from "./location-context"
 import { KakaoMapLoader } from "./kakao-map-loader"
 import { Home, Headphones, Clock, User, AlertCircle } from "lucide-react"
+import Image from "next/image"
 
 function AppContent() {
   const [currentScreen, setCurrentScreen] = useState<"onboarding" | "home" | "listen" | "timeline" | "profile">(
@@ -44,29 +45,37 @@ function AppContent() {
         return <CreateContentModal onClose={() => setShowCreateModal(false)} />
     }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="fixed top-0 left-0 right-0 bg-white z-10 px-4 py-4 border-b">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Hear & Here</h1>
-              {!isKakaoMapAvailable && (
-                <div className="flex items-center space-x-1">
-                  <AlertCircle className="w-3 h-3 text-amber-500" />
-                  <p className="text-xs text-amber-600">지도 API 연결 안됨</p>
+    return (
+        <div className="min-h-screen bg-gray-50">
+            <div className="fixed top-0 left-0 right-0 bg-white z-10 px-4 py-4 border-b">
+                <div className="flex items-center justify-between">
+                    {/* 왼쪽 로고 + 지도 상태 */}
+                    <div className="flex items-center gap-3">
+                        {/* ✅ 로고 추가 */}
+                        <Image
+                            src="/logo.svg"
+                            alt="로고"
+                            width={50}
+                            height={50}
+                            priority
+                        />
+                        {!isKakaoMapAvailable && (
+                            <div className="flex items-center space-x-1">
+                                <AlertCircle className="w-3 h-3 text-amber-500" />
+                                <p className="text-xs text-amber-600">지도 API 연결 안됨</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* 오른쪽 새 게시물 버튼 */}
+                    <Button
+                        onClick={() => setShowCreateModal(true)}
+                        className="text-primary hover:text-primary-800 text-white rounded-full px-6"
+                    >
+                        새 게시물
+                    </Button>
                 </div>
-              )}
             </div>
-          </div>
-          <Button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-pink-400 hover:bg-pink-500 text-white rounded-full px-6"
-          >
-            새 게시물
-          </Button>
-        </div>
-      </div>
 
       {/* 메인 콘텐츠 */}
       <div className="pt-20 pb-20">
