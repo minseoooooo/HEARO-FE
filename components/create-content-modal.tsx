@@ -153,14 +153,9 @@ try {
         });
 
       } else { // ✨ 음성 모드 로직 변경
-        
-        // 1. URL에 포함할 위치 정보(rq)를 만듭니다.
-        const locationQuery = {
-          latitude: location.lat,
-          longitude: location.lng,
-        };
-        const encodedQuery = encodeURIComponent(JSON.stringify(locationQuery));
-        const endpoint = `https://api.herehear.p-e.kr/entry/audio?rq=${encodedQuery}`;
+
+        // 1. URL에 쿼리 파라미터로 위치 정보를 추가합니다.
+        const endpoint = `https://api.herehear.p-e.kr/entry/audio?latitude=${location.lat}&longitude=${location.lng}`;
 
         // 2. 본문(body)에는 오직 음성 파일만 담습니다.
         const formData = new FormData();
