@@ -9,6 +9,7 @@ pipelines:
         script:
           # 1. 의존성 설치
           - npm install
+          - npm install react-router-dom
 
           # 2. 빌드
           - npm run build
