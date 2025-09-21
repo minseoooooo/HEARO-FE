@@ -55,7 +55,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
       const timeoutId = setTimeout(() => controller.abort(), 10000)
 
       const response = await fetch("https://api.herehear.p-e.kr/user/location", {
-        method: "POST",
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
