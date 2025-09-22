@@ -12,6 +12,7 @@ import { LocationProvider, useLocation } from "./location-context"
 import { KakaoMapLoader } from "./kakao-map-loader"
 import { Home, Headphones, Clock, User, AlertCircle } from "lucide-react"
 import Image from "next/image"
+import { AccessibilityProvider } from "./accessibility-context"
 
 function AppContent() {
   const [currentScreen, setCurrentScreen] = useState<"onboarding" | "home" | "listen" | "timeline" | "profile">(
@@ -136,7 +137,7 @@ function AppContent() {
             <Headphones className="w-6 h-6 mb-1" />
             <span className="text-xs">듣기</span>
           </button>
-          <button
+          {/* <button
             onClick={() => setCurrentScreen("timeline")}
             className={`flex flex-col items-center py-2 px-4 ${
               currentScreen === "timeline" ? "text-primary" : "text-gray-600"
@@ -144,8 +145,8 @@ function AppContent() {
           >
             <Clock className="w-6 h-6 mb-1" />
             <span className="text-xs">타임라인</span>
-          </button>
-          <button
+          </button> */}
+          {/* <button
             onClick={() => setCurrentScreen("profile")}
             className={`flex flex-col items-center py-2 px-4 ${
               currentScreen === "profile" ? "text-primary" : "text-gray-600"
@@ -153,7 +154,7 @@ function AppContent() {
           >
             <User className="w-6 h-6 mb-1" />
             <span className="text-xs">프로필</span>
-          </button>
+          </button> */}
         </div>
       </div>
     </div>
