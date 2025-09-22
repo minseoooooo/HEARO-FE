@@ -55,8 +55,8 @@ function AppContent() {
                         <Image
                             src="/logo.svg"
                             alt="로고"
-                            width={50}
-                            height={50}
+                            width={35}
+                            height={35}
                             priority
                         />
                         {!isKakaoMapAvailable && (
