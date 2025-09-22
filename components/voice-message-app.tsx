@@ -23,19 +23,19 @@ function AppContent() {
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false)
   const { location, updateLocation, isKakaoMapAvailable } = useLocation()
 
-  const handleOnboardingComplete = () => {
-    setHasCompletedOnboarding(true)
-    setCurrentScreen("home")
-  }
+  // const handleOnboardingComplete = () => {
+  //   setHasCompletedOnboarding(true)
+  //   setCurrentScreen("home")
+  // }
 
   const handleMapAreaClick = () => {
     updateLocation()
   }
 
-  // 온보딩 화면
-  if (!hasCompletedOnboarding) {
-    return <OnboardingFlow onComplete={handleOnboardingComplete} />
-  }
+  // // 온보딩 화면
+  // if (!hasCompletedOnboarding) {
+  //   return <OnboardingFlow onComplete={handleOnboardingComplete} />
+  // }
 
   // 오디오 플레이어 모달
   if (currentAudio) {
