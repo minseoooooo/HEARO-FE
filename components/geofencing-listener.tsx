@@ -33,7 +33,7 @@ export function GeofencingListener() {
     console.log("[v1] SSE 연결 시작:", location, "반경:", currentRadius)
 
     const es = new EventSource(
-        `http://localhost:8080/sse?latitude=${location.lat}&longitude=${location.lng}&radius=${currentRadius}`
+        `https://api.herehear.p-e.kr/sse?latitude=${location.lat}&longitude=${location.lng}&radius=${currentRadius}`
     )
 
     es.onopen = () => console.log("[v1] SSE 연결 성공")
