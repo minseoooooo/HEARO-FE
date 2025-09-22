@@ -11,11 +11,11 @@ interface VoiceMessage {
   id: number
   content: string
   location: string
-  distance: string
-  duration: string
   type: string
   timestamp: string
   audioUrl?: string
+  distance?: string
+  duration?: string
 }
 
 export function GeofencingListener() {
@@ -26,122 +26,92 @@ export function GeofencingListener() {
   const [isLoading, setIsLoading] = useState(false)
   const { location, isKakaoMapAvailable } = useLocation()
 
+  // ✅ SSE 연결
+  useEffect(() => {
+    if (!isListening || !location) return
+
+    console.log("[v1] SSE 연결 시작:", location, "반경:", currentRadius)
+
+    const es = new EventSource(
+        `http://localhost:8080/sse?latitude=${location.lat}&longitude=${location.lng}&radius=${currentRadius}`
+    )
+
+    es.onopen = () => console.log("[v1] SSE 연결 성공")
+    es.onerror = (err) => {
+      console.error("[v1] SSE 오류:", err)
+      es.close()
+    }
+
+    es.addEventListener("audio", (event: MessageEvent) => {
+      try {
+        const audioMessage: VoiceMessage = JSON.parse(event.data)
+        console.log("[v1] 새 메시지 수신:", audioMessage)
+
+        // 기존 목록에 누적
+        setNearbyVoiceMessages((prev) => [audioMessage, ...prev])
+
+        // 자동 재생
+        if (audioMessage.audioUrl) {
+          const audio = new Audio(audioMessage.audioUrl)
+          audio.play().catch((err) => console.error("[v1] 자동재생 실패:", err))
+        }
+      } catch (e) {
+        console.error("[v1] JSON 파싱 실패:", e)
+      }
+    })
+
+    return () => {
+      console.log("[v1] SSE 연결 종료")
+      es.close()
+    }
+  }, [isListening, location, currentRadius])
+
+  // ✅ 기존 fetch는 초기 로드나 fallback 용
   const fetchNearbyVoiceMessages = async () => {
     if (!location) return
-
     setIsLoading(true)
     try {
-      console.log("[v0] 근처 음성 메시지 요청:", location, "반경:", currentRadius)
-
-      const response = await fetch(
-        `https://api.herehear.p-e.kr/posts/voice/nearby?lat=${location.lat}&lng=${location.lng}&radius=${currentRadius}&type=voice`,
-        {
-          method: "GET",
-          headers: {
-            Accept: "application/json",
-          },
-          mode: "cors",
-        },
+      const res = await fetch(
+          `https://api.herehear.p-e.kr/posts/voice/nearby?lat=${location.lat}&lng=${location.lng}&radius=${currentRadius}&type=voice`
       )
-
-      if (response.ok) {
-        const messages = await response.json()
-        console.log("[v0] 근처 음성 메시지 로드 성공:", messages)
-        setNearbyVoiceMessages(messages)
-      } else {
-        console.error("[v0] 음성 메시지 로드 실패:", response.status)
-        // 실패 시 더미 데이터 사용
-        setNearbyVoiceMessages(getDummyVoiceMessages())
+      if (res.ok) {
+        const data = await res.json()
+        setNearbyVoiceMessages(data)
       }
-    } catch (error) {
-      console.error("[v0] 음성 메시지 로드 오류:", error)
-      // 오류 시 더미 데이터 사용
-      setNearbyVoiceMessages(getDummyVoiceMessages())
+    } catch (err) {
+      console.error("[v1] 초기 메시지 로드 실패:", err)
     } finally {
       setIsLoading(false)
     }
   }
 
-  const getDummyVoiceMessages = (): VoiceMessage[] => [
-    {
-      id: 1,
-      content: "소리에 집중하며 걸어볼까요? 🎧",
-      location: location?.address || "강남역 2번 출구",
-      distance: "15m",
-      duration: "10초",
-      type: "익명",
-      timestamp: "방금 100m 내 음성 메시지",
-    },
-    {
-      id: 2,
-      content: "여기 계단 조심하세요. 경사가 가파릅니다.",
-      location: location?.address || "강남역 지하도",
-      distance: "45m",
-      duration: "8초",
-      type: "레벨 3 사용자",
-      timestamp: "5분 전",
-    },
-  ]
-
-  useEffect(() => {
-    if (location && isListening) {
-      fetchNearbyVoiceMessages()
-    }
-  }, [location, currentRadius, isListening])
-
-  useEffect(() => {
-    if (isListening && location) {
-      const interval = setInterval(() => {
-        console.log("[v0] Geofencing active, checking for new messages...")
-        fetchNearbyVoiceMessages()
-      }, 10000) // 10초마다 확인
-
-      return () => clearInterval(interval)
-    }
-  }, [isListening, location])
-
   const handlePlayMessage = async (messageId: number, content: string, audioUrl?: string) => {
     if (currentlyPlaying === messageId) {
       setCurrentlyPlaying(null)
-      if ("speechSynthesis" in window) {
-        window.speechSynthesis.cancel()
-      }
+      window.speechSynthesis.cancel()
     } else {
       setCurrentlyPlaying(messageId)
 
       if (audioUrl) {
-        try {
-          const response = await fetch(`https://api.herehear.p-e.kr/audio/${audioUrl}`, {
-            mode: "cors",
-          })
-          if (response.ok) {
-            const audioBlob = await response.blob()
-            const audioObjectUrl = URL.createObjectURL(audioBlob)
-            const audio = new Audio(audioObjectUrl)
-            audio.onended = () => setCurrentlyPlaying(null)
-            audio.onerror = () => {
-              setCurrentlyPlaying(null)
-              console.error("[v0] 음성 재생 실패")
-            }
-            audio.play()
-            return
-          }
-        } catch (error) {
-          console.error("[v0] 음성 파일 로드 실패:", error)
-        }
+        const audio = new Audio(audioUrl)
+        audio.onended = () => setCurrentlyPlaying(null)
+        await audio.play().catch((err) => {
+          console.error("[v1] 음성 재생 실패:", err)
+          setCurrentlyPlaying(null)
+        })
+        return
       }
 
-      // 음성 파일이 없거나 실패 시 TTS 사용
-      if ("speechSynthesis" in window) {
-        const utterance = new SpeechSynthesisUtterance(content)
-        utterance.lang = "ko-KR"
-        utterance.rate = 0.9
-        utterance.onend = () => setCurrentlyPlaying(null)
-        utterance.onerror = () => setCurrentlyPlaying(null)
-        window.speechSynthesis.speak(utterance)
-      }
+      // TTS fallback
+      const utterance = new SpeechSynthesisUtterance(content)
+      utterance.lang = "ko-KR"
+      utterance.rate = 0.9
+      utterance.onend = () => setCurrentlyPlaying(null)
+      utterance.onerror = () => setCurrentlyPlaying(null)
+      window.speechSynthesis.speak(utterance)
     }
   }
+
 
   return (
     <div className="space-y-6 p-4">
