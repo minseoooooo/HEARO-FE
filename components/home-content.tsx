@@ -215,7 +215,7 @@ export function HomeContent({setCurrentAudio, onMapAreaClick}: HomeContentProps)
                   {item.type}
                 </span>
                                 <span className="text-sm text-gray-500">{item.type}</span>
-                                <span className="text-sm text-gray-400">• {item.distance + "m"}</span>
+                                <span className="text-sm text-gray-400">• {item.distance + " km"}</span>
                             </div>
                             <Button
                                 variant="ghost"
