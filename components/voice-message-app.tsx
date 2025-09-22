@@ -15,9 +15,13 @@ import Image from "next/image"
 import { AccessibilityProvider } from "./accessibility-context"
 
 function AppContent() {
+  // const [currentScreen, setCurrentScreen] = useState<"onboarding" | "home" | "listen" | "timeline" | "profile">(
+  //   "onboarding",
+  // )
   const [currentScreen, setCurrentScreen] = useState<"onboarding" | "home" | "listen" | "timeline" | "profile">(
-    "onboarding",
+    "home",
   )
+
   const [currentAudio, setCurrentAudio] = useState<any>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false)
