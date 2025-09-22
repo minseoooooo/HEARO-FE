@@ -1,30 +1,34 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react" // useRef 추가
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { MapPin, Volume2, VolumeX, Heart, MessageCircle, Share2, AlertCircle } from "lucide-react"
 import { useLocation } from "./location-context"
 
 interface HomeContentProps {
-  setCurrentAudio: (audio: any) => void
-  location?: { lat: number; lng: number } | null
+  // setCurrentAudio는 더 이상 필요 없으므로 제거하거나 주석 처리할 수 있습니다.
+  // setCurrentAudio: (audio: any) => void 
   onMapAreaClick?: () => void
 }
 
+// API 명세에 맞는 Post 인터페이스
 interface Post {
-  id: number;                // 식별자
-  distance: number;          // 유저와의 거리 (m 단위, number)
-  textContent: string;       // 게시물 텍스트
-  audioContentUrl?: string;  // 오디오 Presigned URL (없을 수도 있음)
-  type: string;              // 게시물 타입 (예: "AUDIO", "TEXT")
+  id: number;
+  distance: number;
+  textContent: string;
+  audioContentUrl?: string;
+  type: "AUDIO" | "TEXT"; // 타입을 명확하게 지정
 }
 
-export function HomeContent({ setCurrentAudio, onMapAreaClick }: HomeContentProps) {
-  const [playingPost, setPlayingPost] = useState<number | null>(null)
-  const [nearbyContent, setNearbyContent] = useState<Post[]>([]);
+export function HomeContent({ onMapAreaClick }: HomeContentProps) {
+  const [playingPostId, setPlayingPostId] = useState<number | null>(null)
+  const [nearbyContent, setNearbyContent] = useState<Post[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const { location, isKakaoMapAvailable } = useLocation()
+  
+  // 오디오 재생을 관리하기 위한 Ref
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const fetchNearbyPosts = async () => {
     if (!location) return;
@@ -47,84 +51,73 @@ export function HomeContent({ setCurrentAudio, onMapAreaClick }: HomeContentProp
       });
 
       if (response.ok) {
-        const posts = await response.json();
-        console.log("[v0] 근처 게시물 로드 성공:", posts);
-        setNearbyContent(Array.isArray(posts.textEntryRsList) ? posts.textEntryRsList : []);
+        const data = await response.json();
+        const posts = Array.isArray(data.textEntryRsList) ? data.textEntryRsList : [];
+        console.log("[v1] 근처 게시물 로드 성공:", posts);
+        setNearbyContent(posts);
       } else {
-        console.error("[v0] 게시물 로드 실패:", response.status);
-        setNearbyContent(getDummyPosts());
+        console.error("[v1] 게시물 로드 실패:", response.status);
+        setNearbyContent([]); // 실패 시 빈 배열로 초기화
       }
     } catch (error) {
-      console.error("[v0] 게시물 로드 오류:", error);
-      setNearbyContent(getDummyPosts());
+      console.error("[v1] 게시물 로드 오류:", error);
+      setNearbyContent([]); // 오류 발생 시 빈 배열로 초기화
     } finally {
       setIsLoading(false);
     }
   }
-
-  const getDummyPosts = (): Post[] => [
-    {
-      id: 1,
-      type: "TEXT",
-      textContent: "이 카페 진짜 분위기 좋다! 작업하기 딱이야 ☕",
-      distance: 15, // ✅ number로
-    },
-    {
-      id: 2,
-      type: "TEXT",
-      textContent: "여기 주차 어려워요. 근처 공영주차장 이용하세요!",
-      distance: 32,
-    },
-    {
-      id: 3,
-      type: "AUDIO",
-      textContent: "🎵 이 노래 좋다... (음성에서 변환됨)",
-      distance: 68,
-      audioContentUrl: "https://dummy-s3-url.com/audio/sample.webm", // ✅ 예시 URL
-    },
-  ]
-
+  
+  // 위치가 변경될 때마다 게시물을 새로 불러옵니다.
   useEffect(() => {
     if (location) {
-      fetchNearbyPosts()
+      fetchNearbyPosts();
     }
-  }, [location])
+  }, [location]);
 
-  const handleTextToSpeech = async (postId: number, content: string, audioUrl?: string) => {
-    if (playingPost === postId) {
-      setPlayingPost(null)
-      if ("speechSynthesis" in window) {
-        window.speechSynthesis.cancel()
-      }
+  // 오디오 재생/중지 로직
+  const handleAudioPlay = (post: Post) => {
+    // 현재 재생 중인 오디오 중지
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    
+    // 다른 오디오를 재생하고 있었다면 상태 초기화
+    if (playingPostId !== null && playingPostId !== post.id) {
+      setPlayingPostId(null);
+    }
+    
+    // 현재 클릭한 오디오가 이미 재생 중이면 중지
+    if (playingPostId === post.id) {
+      setPlayingPostId(null);
       return;
     }
+    
+    setPlayingPostId(post.id);
 
-    setPlayingPost(postId);
+    if (post.audioContentUrl) {
+      const audio = new Audio(post.audioContentUrl);
+      audioRef.current = audio;
 
-    if (audioUrl) {
-      try {
-        const audio = new Audio(audioUrl); // ✅ Presigned URL 바로 사용
-        audio.onended = () => setPlayingPost(null);
-        audio.onerror = () => {
-          setPlayingPost(null);
-          console.error("[v0] 음성 재생 실패");
-        };
-
-        await audio.play();
-        return;
-      } catch (error) {
-        setPlayingPost(null);
-        console.error("[v0] 음성 파일 로드 실패:", error);
-      }
+      audio.play().catch(err => {
+        console.error("오디오 재생 실패:", err);
+        setPlayingPostId(null);
+      });
+      
+      audio.onended = () => {
+        setPlayingPostId(null);
+        audioRef.current = null;
+      };
     } else {
-      // audioUrl이 없으면 TTS로 읽기
+      // 오디오 URL이 없는 텍스트 게시물은 TTS로 재생
       if ("speechSynthesis" in window) {
-        const utterance = new SpeechSynthesisUtterance(content);
-        utterance.onend = () => setPlayingPost(null);
+        const utterance = new SpeechSynthesisUtterance(post.textContent);
+        utterance.lang = "ko-KR";
+        utterance.onend = () => setPlayingPostId(null);
         window.speechSynthesis.speak(utterance);
       }
     }
-  }
+  };
 
   return (
     <div className="space-y-4 p-4 pb-6">
@@ -162,52 +155,38 @@ export function HomeContent({ setCurrentAudio, onMapAreaClick }: HomeContentProp
           {isLoading && <span className="text-sm text-gray-500">로딩 중...</span>}
         </div>
 
+        {nearbyContent.length === 0 && !isLoading && (
+          <Card className="p-4 text-center text-gray-500">
+            주변에 게시물이 없습니다.
+          </Card>
+        )}
+
         {nearbyContent.map((item) => (
           <Card key={item.id} className="p-4 space-y-3 bg-white rounded-2xl shadow-sm border-0">
             <div className="flex items-start justify-between">
               <div className="flex items-center space-x-2">
-                <span className="text-sm font-semibold text-primary text-primary px-3 py-1 rounded-full">
-                  {item.type}
+                <span className="text-sm font-semibold text-primary bg-primary-foreground px-3 py-1 rounded-full">
+                  {item.type === "AUDIO" ? "음성" : "텍스트"}
                 </span>
-                <span className="text-sm text-gray-500">{item.type}</span>
-                <span className="text-sm text-gray-400">• {item.distance + "m"}</span>
+                <span className="text-sm text-gray-400">• {item.distance}m</span>
               </div>
               <Button
                 variant="ghost"
                 size="default"
-                onClick={() => handleTextToSpeech(item.id, item.textContent, item.audioContentUrl)}
+                onClick={() => handleAudioPlay(item)}
                 className="h-10 w-10 p-0 hover:bg-pink-50 rounded-full"
-                title={item.type == "AUDIO" ? "원본 음성 재생" : "텍스트 음성 변환"}
+                title={item.type === "AUDIO" ? "음성 재생" : "음성으로 듣기"}
               >
-                {playingPost === item.id ? (
+                {playingPostId === item.id ? (
                   <VolumeX className="w-5 h-5 text-primary" />
                 ) : (
-                  <Volume2 className={`w-5 h-5 ${item.type == "AUDIO" ? "text-primary" : "text-gray-400"}`} />
+                  <Volume2 className={`w-5 h-5 ${item.type === "AUDIO" ? "text-primary" : "text-gray-400"}`} />
                 )}
               </Button>
             </div>
 
             <p className="text-gray-900 leading-relaxed text-base">{item.textContent}</p>
 
-            {/*<div className="flex items-center justify-between pt-2">*/}
-            {/*  <div className="flex items-center space-x-6">*/}
-            {/*    <button className="flex items-center space-x-1 text-gray-500 hover:text-pink-400 transition-colors">*/}
-            {/*      <Heart className="w-5 h-5" />*/}
-            {/*      <span className="text-sm font-medium">{item.likes}</span>*/}
-            {/*    </button>*/}
-            {/*    <button className="flex items-center space-x-1 text-gray-500 hover:text-pink-400 transition-colors">*/}
-            {/*      <MessageCircle className="w-5 h-5" />*/}
-            {/*      <span className="text-sm font-medium">{item.comments}</span>*/}
-            {/*    </button>*/}
-            {/*    <button className="flex items-center space-x-1 text-gray-500 hover:text-pink-400 transition-colors">*/}
-            {/*      <Share2 className="w-5 h-5" />*/}
-            {/*    </button>*/}
-            {/*  </div>*/}
-            {/*  <div className="text-right">*/}
-            {/*    <p className="text-xs text-gray-400">{item.time}</p>*/}
-            {/*    <p className="text-xs text-gray-400">{item.location}</p>*/}
-            {/*  </div>*/}
-            {/*</div>*/}
           </Card>
         ))}
       </div>
