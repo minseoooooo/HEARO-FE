@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link" // Link 임포트 추가
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { OnboardingFlow } from "./onboarding-flow"
@@ -12,7 +13,7 @@ import { LocationProvider, useLocation } from "./location-context"
 import { KakaoMapLoader } from "./kakao-map-loader"
 import { Home, Headphones, Clock, User, AlertCircle, Type } from "lucide-react"
 import Image from "next/image"
-import { useAccessibility } from "./accessibility-context" // Provider는 제거하고 훅만 남깁니다.
+import { AccessibilityProvider, useAccessibility } from "./accessibility-context"
 import { Slider } from "@/components/ui/slider"
 import { Card } from "@/components/ui/card"
 
@@ -52,6 +53,7 @@ function AppContent() {
         <div className="min-h-screen bg-gray-50">
             <div className="fixed top-0 left-0 right-0 bg-white z-10 px-4 py-4 border-b">
                 <div className="flex items-center justify-between">
+                    {/* 왼쪽 로고 + 지도 상태 */}
                     <div className="flex items-center gap-3">
                         <Image
                             src="/logo.svg"
@@ -67,12 +69,19 @@ function AppContent() {
                             </div>
                         )}
                     </div>
-                    <Button
-                        onClick={() => setShowCreateModal(true)}
-                        className="text-primary hover:text-primary-800 text-white rounded-full px-6"
-                    >
-                        새 게시물
-                    </Button>
+
+                    {/* 오른쪽 버튼 영역 수정 */}
+                    <div className="flex items-center gap-2">
+                        <Link href="/auth">
+                            <Button variant="outline">로그인</Button>
+                        </Link>
+                        <Button
+                            onClick={() => setShowCreateModal(true)}
+                            className="text-white rounded-full px-6"
+                        >
+                            새 게시물
+                        </Button>
+                    </div>
                 </div>
             </div>
 
@@ -169,7 +178,6 @@ function AppContent() {
   )
 }
 
-// VoiceMessageApp에서 AccessibilityProvider를 제거합니다.
 export default function VoiceMessageApp() {
   return (
     <KakaoMapLoader>
