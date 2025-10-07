@@ -5,6 +5,7 @@ import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Suspense } from "react"
+import { AccessibilityProvider } from "@/components/accessibility-context"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -29,7 +30,10 @@ export default function RootLayout({
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
         <Suspense>
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-            {children}
+            {/* AccessibilityProvider 추가 */}
+            <AccessibilityProvider>
+              {children}
+            </AccessibilityProvider>
           </ThemeProvider>
         </Suspense>
         <Analytics />
