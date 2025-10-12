@@ -15,7 +15,7 @@ export function CreateContentModal({ onClose }: CreateContentModalProps) {
 
   const [inputMode, setInputMode] = useState("text")
   const [content, setContent] = useState("")
-  const [category, setCategory] = useState("소설")
+  const [category, setCategory] = useState("소셜")
   const [privacy, setPrivacy] = useState("공개")
   const [duration, setDuration] = useState("1시간")
   const [isRecording, setIsRecording] = useState(false)

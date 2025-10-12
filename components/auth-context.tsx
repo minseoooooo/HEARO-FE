@@ -18,28 +18,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
 
+  const logout = () => {
+    localStorage.removeItem("accessToken")
+    document.cookie = "accessToken=; path=/; max-age=-1;"
+    setToken(null)
+    router.push("/auth")
+  }
+
   useEffect(() => {
     const storedToken = localStorage.getItem("accessToken")
     if (storedToken) {
       setToken(storedToken)
     }
     setIsLoading(false)
+
+    // 401 오류 발생 시 로그아웃을 처리하는 이벤트 리스너
+    const handleAuthError = () => {
+      logout()
+    }
+
+    window.addEventListener("auth-error", handleAuthError)
+
+    return () => {
+      window.removeEventListener("auth-error", handleAuthError)
+    }
   }, [])
 
   const login = (newToken: string) => {
     localStorage.setItem("accessToken", newToken)
-    // 미들웨어가 인식할 수 있도록 쿠키를 설정합니다. (유효기간: 1일)
     document.cookie = `accessToken=${newToken}; path=/; max-age=86400; SameSite=Lax;`
     setToken(newToken)
     router.push("/")
-  }
-
-  const logout = () => {
-    localStorage.removeItem("accessToken")
-    // 쿠키를 만료시켜 삭제합니다.
-    document.cookie = "accessToken=; path=/; max-age=-1;"
-    setToken(null)
-    router.push("/auth")
   }
 
   const value = {
@@ -50,7 +59,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading,
   }
 
-  // 인증 상태를 확인하는 동안 아무것도 렌더링하지 않아 화면 깜빡임을 방지합니다.
   if (isLoading) {
     return null;
   }
