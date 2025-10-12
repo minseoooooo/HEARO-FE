@@ -16,6 +16,7 @@ import Image from "next/image"
 import { AccessibilityProvider, useAccessibility } from "./accessibility-context"
 import { Slider } from "@/components/ui/slider"
 import { Card } from "@/components/ui/card"
+import { useAuth } from "@/components/auth-context";
 
 function AppContent() {
   const [currentScreen, setCurrentScreen] = useState<"onboarding" | "home" | "listen" | "timeline" | "profile">(
@@ -27,6 +28,7 @@ function AppContent() {
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(true)
   const { location, updateLocation, isKakaoMapAvailable } = useLocation()
   const { fontSize, setFontSize, fontSizes } = useAccessibility()
+  const { isAuthenticated, logout } = useAuth();
 
   const handleOnboardingComplete = () => {
     setHasCompletedOnboarding(true)
@@ -72,15 +74,19 @@ function AppContent() {
 
                     {/* 오른쪽 버튼 영역 수정 */}
                     <div className="flex items-center gap-2">
+                      {isAuthenticated ? (
+                        <Button variant="outline" onClick={logout}>로그아웃</Button>
+                      ) : (
                         <Link href="/auth">
-                            <Button variant="outline">로그인</Button>
+                          <Button variant="outline">로그인</Button>
                         </Link>
-                        <Button
-                            onClick={() => setShowCreateModal(true)}
-                            className="text-white rounded-full px-6"
-                        >
-                            새 게시물
-                        </Button>
+                      )}
+                      <Button
+                        onClick={() => setShowCreateModal(true)}
+                        className="text-white rounded-full px-6"
+                      >
+                        새 게시물
+                      </Button>
                     </div>
                 </div>
             </div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -11,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
+import { useAuth } from "@/components/auth-context"
 
 // 로그인 폼 유효성 검사 스키마
 const loginSchema = z.object({
@@ -23,9 +25,10 @@ const signUpSchema = z.object({
   email: z.string().email({ message: "올바른 이메일 형식을 입력해주세요." }),
   password: z.string().min(8, { message: "비밀번호는 8자 이상이어야 합니다." }),
   confirmPassword: z.string(),
+  username: z.string().min(2, { message: "사용자 이름은 2자 이상이어야 합니다." })
 }).refine((data) => data.password === data.confirmPassword, {
   message: "비밀번호가 일치하지 않습니다.",
-  path: ["confirmPassword"], // 오류 메시지를 confirmPassword 필드에 표시
+  path: ["confirmPassword"],
 })
 
 // ID 중복 확인을 위한 상태 타입
@@ -39,7 +42,9 @@ export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [idCheck, setIdCheck] = useState<IdCheckState>(null)
-  const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const { login } = useAuth()
+  const router = useRouter()
 
   const form = useForm({
     resolver: zodResolver(isLogin ? loginSchema : signUpSchema),
@@ -47,46 +52,40 @@ export default function AuthPage() {
       email: "",
       password: "",
       confirmPassword: "",
+      username: "",
     },
   })
 
-  // ID 중복 확인 API 호출 함수 (Debounce 적용)
-  const checkIdAvailability = async (email: string) => {
-    if (!z.string().email().safeParse(email).success) {
-      setIdCheck(null)
-      return
+  // 이메일 중복 확인 버튼 클릭 핸들러
+  const handleCheckEmail = async () => {
+    const email = form.getValues("email");
+    const isEmailValid = await form.trigger("email"); // 이메일 필드 유효성 검사
+
+    if (!isEmailValid) {
+        setIdCheck(null);
+        return;
     }
 
     try {
-      // 실제 API 엔드포인트로 수정해야 합니다.
-      const response = await fetch(`https://api.herehear.p-e.kr/auth/check-id?email=${email}`)
-      const data = await response.json()
-
-      if (response.ok) {
-        setIdCheck({ message: "사용 가능한 ID입니다.", isAvailable: true })
+      const response = await fetch(`https://api.herehear.p-e.kr/api/v1/auth/check-email?email=${email}`)
+      if (response.status === 200) {
+        setIdCheck({ message: "사용 가능한 이메일입니다.", isAvailable: true })
+      } else if (response.status === 409) {
+        setIdCheck({ message: "이미 사용 중인 이메일입니다.", isAvailable: false })
       } else {
-        // API가 409 (Conflict) 등으로 중복을 알린다고 가정
-        setIdCheck({ message: "중복된 ID입니다.", isAvailable: false })
+        throw new Error("서버 응답 오류")
       }
     } catch (error) {
-      console.error("ID 중복 확인 오류:", error)
+      console.error("이메일 중복 확인 오류:", error)
       setIdCheck({ message: "확인 중 오류가 발생했습니다.", isAvailable: false })
     }
   }
 
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 이메일 입력 시 중복 확인 상태 초기화
+  const handleEmailInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     form.setValue("email", e.target.value)
-    form.trigger("email") // 이메일 필드 유효성 검사 트리거
-
-    if (typingTimeout) {
-      clearTimeout(typingTimeout)
-    }
-
-    if (!isLogin) {
-        const newTimeout = setTimeout(() => {
-            checkIdAvailability(e.target.value)
-        }, 500) // 500ms 디바운스
-        setTypingTimeout(newTimeout)
+    if (idCheck) {
+        setIdCheck(null)
     }
   }
 
@@ -96,15 +95,59 @@ export default function AuthPage() {
     setIdCheck(null)
   }
   
-  const onSubmit = (data: z.infer<typeof loginSchema | typeof signUpSchema>) => {
-    console.log(data)
+  const onSubmit = async (values: z.infer<typeof loginSchema | typeof signUpSchema>) => {
+    setIsLoading(true)
+    form.clearErrors("root")
+
     if (isLogin) {
-      alert("로그인 요청을 보냅니다.")
-      // TODO: 로그인 API 호출
-    } else {
-      alert("회원가입 요청을 보냅니다.")
-      // TODO: 회원가입 API 호출
+      try {
+        const response = await fetch("https://api.herehear.p-e.kr/api/v1/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: values.email, password: values.password }),
+        })
+        if (response.ok) {
+          const data = await response.json()
+          document.cookie = `accessToken=${data.accessToken}; path=/; max-age=86400;`
+          login(data.accessToken)
+        } else {
+          const errorData = await response.json()
+          form.setError("root", { message: errorData.message || "이메일 또는 비밀번호가 올바르지 않습니다." })
+        }
+      } catch (error) {
+        form.setError("root", { message: "로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요." })
+      }
+    } else { // 회원가입 로직
+      if (!idCheck?.isAvailable) {
+        form.setError("email", { message: "이메일 중복 확인을 완료해주세요." })
+        setIsLoading(false)
+        return
+      }
+      try {
+        const signupValues = values as z.infer<typeof signUpSchema>
+        const response = await fetch("https://api.herehear.p-e.kr/api/v1/auth/signup", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                email: signupValues.email,
+                password: signupValues.password,
+                username: signupValues.username,
+            }),
+        });
+
+        if (response.ok) {
+            alert("회원가입이 완료되었습니다! 로그인 해주세요.")
+            setIsLogin(true)
+            form.reset()
+        } else {
+            const errorData = await response.json();
+            form.setError("root", { message: errorData.message || "회원가입에 실패했습니다." });
+        }
+      } catch (error) {
+        form.setError("root", { message: "회원가입 중 오류가 발생했습니다." });
+      }
     }
+    setIsLoading(false)
   }
 
   return (
@@ -117,17 +160,30 @@ export default function AuthPage() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {form.formState.errors.root && (
+                <div className="text-red-600 text-sm font-medium p-3 bg-red-100 rounded-md">
+                  {form.formState.errors.root.message}
+                </div>
+              )}
+
               <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>이메일</FormLabel>
-                    <FormControl>
-                      <Input placeholder="이메일을 입력하세요" {...field} onChange={handleEmailChange} />
-                    </FormControl>
+                    <div className="flex gap-2">
+                      <FormControl>
+                        <Input placeholder="이메일을 입력하세요" {...field} onChange={handleEmailInputChange} />
+                      </FormControl>
+                      {!isLogin && (
+                        <Button type="button" variant="outline" onClick={handleCheckEmail}>
+                          중복확인
+                        </Button>
+                      )}
+                    </div>
                     {!isLogin && idCheck && (
-                      <p className={`text-sm ${idCheck.isAvailable ? 'text-green-600' : 'text-red-600'}`}>
+                      <p className={`text-sm mt-2 ${idCheck.isAvailable ? 'text-green-600' : 'text-red-600'}`}>
                         {idCheck.message}
                       </p>
                     )}
@@ -135,6 +191,23 @@ export default function AuthPage() {
                   </FormItem>
                 )}
               />
+
+              {!isLogin && (
+                <FormField
+                  control={form.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>사용자 이름</FormLabel>
+                      <FormControl>
+                        <Input placeholder="사용자 이름을 입력하세요" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
               <FormField
                 control={form.control}
                 name="password"
@@ -153,6 +226,7 @@ export default function AuthPage() {
                   </FormItem>
                 )}
               />
+
               {!isLogin && (
                 <FormField
                   control={form.control}
@@ -173,8 +247,9 @@ export default function AuthPage() {
                   )}
                 />
               )}
-              <Button type="submit" className="w-full bg-[#FF6C97] hover:bg-[#ff588a]">
-                {isLogin ? "로그인" : "회원가입"}
+
+              <Button type="submit" className="w-full bg-[#FF6C97] hover:bg-[#ff588a]" disabled={isLoading || (!isLogin && !idCheck?.isAvailable)}>
+                {isLoading ? "처리 중..." : isLogin ? "로그인" : "회원가입"}
               </Button>
             </form>
           </Form>
@@ -183,7 +258,7 @@ export default function AuthPage() {
           <button onClick={toggleForm} className="text-sm text-gray-600 hover:underline">
             {isLogin ? "계정이 없으신가요? 회원가입" : "이미 계정이 있으신가요? 로그인"}
           </button>
-          {/* <a href="#" className="text-sm text-gray-600 hover:underline">비밀번호를 잊으셨나요?</a> */}
+          <a href="#" className="text-sm text-gray-600 hover:underline">비밀번호를 잊으셨나요?</a>
         </CardFooter>
       </Card>
     </div>
