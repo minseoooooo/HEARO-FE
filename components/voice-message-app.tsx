@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link" // Link 임포트 추가
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { OnboardingFlow } from "./onboarding-flow"
@@ -10,38 +11,38 @@ import { CreateContentModal } from "./create-content-modal"
 import { PersonalTimeline } from "./personal-timeline"
 import { LocationProvider, useLocation } from "./location-context"
 import { KakaoMapLoader } from "./kakao-map-loader"
-import { Home, Headphones, Clock, User, AlertCircle } from "lucide-react"
+import { Home, Headphones, Clock, User, AlertCircle, Type } from "lucide-react"
 import Image from "next/image"
-import { AccessibilityProvider } from "./accessibility-context"
+import { AccessibilityProvider, useAccessibility } from "./accessibility-context"
+import { Slider } from "@/components/ui/slider"
+import { Card } from "@/components/ui/card"
+import { useAuth } from "@/components/auth-context";
 
 function AppContent() {
-  // const [currentScreen, setCurrentScreen] = useState<"onboarding" | "home" | "listen" | "timeline" | "profile">(
-  //   "onboarding",
-  // )
   const [currentScreen, setCurrentScreen] = useState<"onboarding" | "home" | "listen" | "timeline" | "profile">(
     "home",
   )
 
   const [currentAudio, setCurrentAudio] = useState<any>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
-  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false)
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(true)
   const { location, updateLocation, isKakaoMapAvailable } = useLocation()
+  const { fontSize, setFontSize, fontSizes } = useAccessibility()
+  const { isAuthenticated, logout } = useAuth();
 
-  // const handleOnboardingComplete = () => {
-  //   setHasCompletedOnboarding(true)
-  //   setCurrentScreen("home")
-  // }
+  const handleOnboardingComplete = () => {
+    setHasCompletedOnboarding(true)
+    setCurrentScreen("home")
+  }
 
   const handleMapAreaClick = () => {
     updateLocation()
   }
 
-  // // 온보딩 화면
-  // if (!hasCompletedOnboarding) {
-  //   return <OnboardingFlow onComplete={handleOnboardingComplete} />
-  // }
+  if (!hasCompletedOnboarding) {
+    return <OnboardingFlow onComplete={handleOnboardingComplete} />
+  }
 
-  // 오디오 플레이어 모달
   if (currentAudio) {
     return <AudioPlayer audio={currentAudio} onClose={() => setCurrentAudio(null)} />
   }
@@ -56,7 +57,6 @@ function AppContent() {
                 <div className="flex items-center justify-between">
                     {/* 왼쪽 로고 + 지도 상태 */}
                     <div className="flex items-center gap-3">
-                        {/* ✅ 로고 추가 */}
                         <Image
                             src="/logo.svg"
                             alt="로고"
@@ -72,20 +72,28 @@ function AppContent() {
                         )}
                     </div>
 
-                    {/* 오른쪽 새 게시물 버튼 */}
-                    <Button
+                    {/* 오른쪽 버튼 영역 수정 */}
+                    <div className="flex items-center gap-2">
+                      {isAuthenticated ? (
+                        <Button variant="outline" onClick={logout}>로그아웃</Button>
+                      ) : (
+                        <Link href="/auth">
+                          <Button variant="outline">로그인</Button>
+                        </Link>
+                      )}
+                      <Button
                         onClick={() => setShowCreateModal(true)}
-                        className="text-primary hover:text-primary-800 text-white rounded-full px-6"
-                    >
+                        className="text-white rounded-full px-6"
+                      >
                         새 게시물
-                    </Button>
+                      </Button>
+                    </div>
                 </div>
             </div>
 
-      {/* 메인 콘텐츠 */}
       <div className="pt-20 pb-20">
         {currentScreen === "home" && (
-          <HomeContent setCurrentAudio={setCurrentAudio} location={location} onMapAreaClick={handleMapAreaClick} />
+          <HomeContent onMapAreaClick={handleMapAreaClick} />
         )}
 
         {currentScreen === "listen" && <GeofencingListener />}
@@ -105,16 +113,27 @@ function AppContent() {
             <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">접근성 설정</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-white rounded-lg">
-                    <span className="text-gray-900">모드</span>
-                    <span className="text-primary">시각 모드 ›</span>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-white rounded-lg">
-                    <span className="text-gray-900">글자 크기</span>
-                    <span className="text-primary">16px ›</span>
-                  </div>
-                </div>
+                <Card className="p-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                            <Type className="w-5 h-5 text-primary" />
+                            <span className="font-medium">글자 크기</span>
+                        </div>
+                        <span className="text-sm text-muted-foreground">{fontSizes[fontSize].name}</span>
+                    </div>
+                    <Slider
+                        value={[fontSize]}
+                        onValueChange={(value) => setFontSize(value[0])}
+                        min={0}
+                        max={fontSizes.length - 1}
+                        step={1}
+                        className="w-full"
+                    />
+                     <div className="flex justify-between text-xs text-muted-foreground px-1">
+                        <span>가</span>
+                        <span>가</span>
+                    </div>
+                </Card>
               </div>
             </div>
           </div>
@@ -141,7 +160,7 @@ function AppContent() {
             <Headphones className="w-6 h-6 mb-1" />
             <span className="text-xs">듣기</span>
           </button>
-          {/* <button
+          <button
             onClick={() => setCurrentScreen("timeline")}
             className={`flex flex-col items-center py-2 px-4 ${
               currentScreen === "timeline" ? "text-primary" : "text-gray-600"
@@ -149,8 +168,8 @@ function AppContent() {
           >
             <Clock className="w-6 h-6 mb-1" />
             <span className="text-xs">타임라인</span>
-          </button> */}
-          {/* <button
+          </button>
+          <button
             onClick={() => setCurrentScreen("profile")}
             className={`flex flex-col items-center py-2 px-4 ${
               currentScreen === "profile" ? "text-primary" : "text-gray-600"
@@ -158,7 +177,7 @@ function AppContent() {
           >
             <User className="w-6 h-6 mb-1" />
             <span className="text-xs">프로필</span>
-          </button> */}
+          </button>
         </div>
       </div>
     </div>

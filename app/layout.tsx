@@ -5,6 +5,8 @@ import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Suspense } from "react"
+import { AccessibilityProvider } from "@/components/accessibility-context"
+import { AuthProvider } from "@/components/auth-context" // AuthProvider 임포트
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -29,7 +31,12 @@ export default function RootLayout({
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
         <Suspense>
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-            {children}
+            <AccessibilityProvider>
+              {/* AuthProvider로 앱 전체를 감싸줍니다. */}
+              <AuthProvider>
+                {children}
+              </AuthProvider>
+            </AccessibilityProvider>
           </ThemeProvider>
         </Suspense>
         <Analytics />
