@@ -79,11 +79,13 @@ export function LocationProvider({ children }: { children: ReactNode }) {
         console.error("[v0] 서버 응답 오류:", response.status, response.statusText)
       }
     } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") {
-            console.error("[v0] API 요청 타임아웃");
-        } else if (error instanceof Error && error.message === "Failed to fetch") {
-            console.error("[v0] 네트워크 연결 오류 - API 서버에 접근할 수 없습니다");
-        }
+      if (error.name === "AbortError") {
+        console.error("[v0] API 요청 타임아웃")
+      } else if (error.message === "Failed to fetch") {
+        console.error("[v0] 네트워크 연결 오류 - API 서버에 접근할 수 없습니다")
+      } else {
+        console.error("[v0] API 전송 중 예상치 못한 오류:", error)
+      }
     }
   }
 
