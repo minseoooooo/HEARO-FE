@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MapPin, Play, Clock, Heart, MessageCircle, Map, Volume2, VolumeX, AlertCircle } from "lucide-react"
 import { useLocation } from "./location-context"
+import {fetchApi} from "@/lib/api";
 
 interface TimelineRecord {
   id: number
@@ -39,7 +40,7 @@ export function PersonalTimeline() {
     try {
       console.log("[v0] 타임라인 데이터 요청")
 
-      const response = await fetch("https://api.herehear.p-e.kr/user/timeline", {
+      const response = await fetchApi("https://api.herehear.p-e.kr/user/timeline", {
         method: "GET",
         headers: {
           Accept: "application/json",
@@ -134,7 +135,7 @@ export function PersonalTimeline() {
       // 음성 파일이 있으면 서버에서 다운로드하여 재생
       if (audioUrl) {
         try {
-          const response = await fetch(`https://api.herehear.p-e.kr/audio/${audioUrl}`, {
+          const response = await fetchApi(`https://api.herehear.p-e.kr/audio/${audioUrl}`, {
             mode: "cors",
           })
           if (response.ok) {

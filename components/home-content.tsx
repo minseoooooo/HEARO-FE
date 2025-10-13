@@ -5,6 +5,7 @@ import {Card} from "@/components/ui/card"
 import {Button} from "@/components/ui/button"
 import {MapPin, Volume2, VolumeX, Heart, MessageCircle, Share2, AlertCircle} from "lucide-react"
 import {useLocation} from "./location-context"
+import {fetchApi} from "@/lib/api";
 
 interface HomeContentProps {
     setCurrentAudio: (audio: any) => void
@@ -39,7 +40,7 @@ export function HomeContent({setCurrentAudio, onMapAreaClick}: HomeContentProps)
         try {
             console.log("[v1] 근처 게시물 요청:", location);
 
-            const response = await fetch("https://api.herehear.p-e.kr/entry/text/read", {
+            const response = await fetchApi("https://api.herehear.p-e.kr/entry/text/read", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

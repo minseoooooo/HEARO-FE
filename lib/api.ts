@@ -8,6 +8,7 @@ const getAuthToken = () => {
   // API 요청을 위한 fetch 래퍼 함수
   export const fetchApi = async (url: string, options: RequestInit = {}) => {
     const token = getAuthToken();
+      console.log("현재 토큰:", token);
   
     const headers = new Headers(options.headers || {});
     if (!headers.has("Content-Type")) {
