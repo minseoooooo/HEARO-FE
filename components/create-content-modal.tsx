@@ -38,8 +38,8 @@ export function CreateContentModal({ onClose }: CreateContentModalProps) {
   const durations = ["1시간", "6시간", "12시간", "24시간", "48시간", "72시간"]
   const privacyOptions = [
     { value: "공개", icon: Eye, label: "모든 사용자", disabled: false },
-    { value: "친구", icon: Users, label: "친구들만", disabled: true },
-    { value: "비공개", icon: Lock, label: "나만 보기", disabled: true },
+    { value: "COMING SOON", icon: Users, label: "친구들만", disabled: true },
+    { value: "COMING SOON", icon: Lock, label: "나만 보기", disabled: true },
   ]
   const categories = [
     { value: "정보", icon: Info, color: "blue" },
