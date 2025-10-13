@@ -4,8 +4,11 @@ import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
+import { Switch } from "@/components/ui/switch" // Switch 컴포넌트 임포트 추가
 import { X, Mic, Type, Clock, Eye, Users, Lock, Info, Music, MoreHorizontal, Square, Play, Pause } from "lucide-react"
 import { useLocation } from "./location-context"
+import { fetchApi } from "@/lib/api"
+import { cn } from "@/lib/utils"
 
 interface CreateContentModalProps {
   onClose: () => void
@@ -15,9 +18,10 @@ export function CreateContentModal({ onClose }: CreateContentModalProps) {
 
   const [inputMode, setInputMode] = useState("text")
   const [content, setContent] = useState("")
-  const [category, setCategory] = useState("소셜")
+  const [category, setCategory] = useState("소설") // NOTE: API상 'SOCIAL'로 매핑됩니다.
   const [privacy, setPrivacy] = useState("공개")
   const [duration, setDuration] = useState("1시간")
+  const [isAnonymous, setIsAnonymous] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
   const [recordingTime, setRecordingTime] = useState(0)
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
@@ -33,22 +37,21 @@ export function CreateContentModal({ onClose }: CreateContentModalProps) {
 
   const durations = ["1시간", "6시간", "12시간", "24시간", "48시간", "72시간"]
   const privacyOptions = [
-    { value: "공개", icon: Eye, label: "모든 사용자" },
-    { value: "COMING SOON", icon: Users, label: "친구들만" },
-    { value: "COMING SOON", icon: Lock, label: "나만 보기" },
+    { value: "공개", icon: Eye, label: "모든 사용자", disabled: false },
+    { value: "친구", icon: Users, label: "친구들만", disabled: true },
+    { value: "비공개", icon: Lock, label: "나만 보기", disabled: true },
   ]
   const categories = [
     { value: "정보", icon: Info, color: "blue" },
-    { value: "소설", icon: Music, color: "pink" },
+    { value: "소설", icon: Music, color: "pink" }, // '소설'은 'SOCIAL'로 매핑됩니다.
     { value: "기타", icon: MoreHorizontal, color: "gray" },
   ]
 
   const startRecording = async () => {
     try {
-      // 🎤 iOS 호환 mimeType 감지
       let mimeType = "audio/webm;codecs=opus"
       if (!MediaRecorder.isTypeSupported(mimeType)) {
-        mimeType = "audio/mp4" // iOS Safari fallback
+        mimeType = "audio/mp4"
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
@@ -58,18 +61,14 @@ export function CreateContentModal({ onClose }: CreateContentModalProps) {
       audioChunksRef.current = []
 
       mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data)
-        }
+        if (event.data.size > 0) audioChunksRef.current.push(event.data)
       }
 
       mediaRecorder.onstop = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: mimeType })
         setAudioBlob(audioBlob)
-        
         const url = URL.createObjectURL(audioBlob)
         setAudioUrl(url)
-        
         stream.getTracks().forEach((track) => track.stop())
       }
 
@@ -77,26 +76,12 @@ export function CreateContentModal({ onClose }: CreateContentModalProps) {
       setIsRecording(true)
       setRecordingTime(0)
 
-      if (timerRef.current) {
-        clearInterval(timerRef.current)
-      }
-
-      timerRef.current = setInterval(() => {
-        setRecordingTime((prev) => prev + 1)
-      }, 1000)
-
+      if (timerRef.current) clearInterval(timerRef.current)
+      timerRef.current = setInterval(() => setRecordingTime((prev) => prev + 1), 1000)
       console.log("[v0] 음성 녹음 시작")
     } catch (error: any) {
       console.error("[v0] 마이크 접근 실패:", error)
-      if (error.name === "NotAllowedError") {
-        alert("마이크 권한이 거부되었습니다. Safari 설정에서 허용해주세요.")
-      } else if (error.name === "NotFoundError") {
-        alert("마이크 장치를 찾을 수 없습니다.")
-      } else if (error.name === "SecurityError") {
-        alert("HTTPS 환경에서만 접근 가능합니다.")
-      } else {
-        alert("알 수 없는 오류가 발생했습니다.")
-      }
+      alert("마이크 접근에 실패했습니다. 브라우저 설정을 확인해주세요.")
     }
   }
 
@@ -104,7 +89,6 @@ export function CreateContentModal({ onClose }: CreateContentModalProps) {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop()
       setIsRecording(false)
-
       if (timerRef.current) {
         clearInterval(timerRef.current)
         timerRef.current = null
@@ -113,20 +97,8 @@ export function CreateContentModal({ onClose }: CreateContentModalProps) {
     }
   }
 
-  const playAudio = () => {
-    if (audioRef.current && audioUrl) {
-      audioRef.current.play()
-      setIsPlaying(true)
-    }
-  }
-
-  const pauseAudio = () => {
-    if (audioRef.current) {
-      audioRef.current.pause()
-      setIsPlaying(false)
-    }
-  }
-
+  const playAudio = () => audioRef.current?.play()
+  const pauseAudio = () => audioRef.current?.pause()
   const handleAudioEnded = () => setIsPlaying(false)
   const handleAudioError = () => {
     setIsPlaying(false)
@@ -138,57 +110,48 @@ export function CreateContentModal({ onClose }: CreateContentModalProps) {
       alert("내용을 입력하거나 음성을 녹음해주세요.")
       return
     }
-
     setIsSubmitting(true)
 
-try {
+    try {
       let response;
       
       if (inputMode === 'text') {
-        // ✨ 텍스트 모드는 기존과 동일하게 유지됩니다.
+        const visibilityMap: { [key: string]: string } = { "공개": "PUBLIC", "친구": "FRIENDS_ONLY", "비공개": "PRIVATE" };
+        const categoryMap: { [key: string]: string } = { "정보": "INFORMATION", "소설": "SOCIAL", "기타": "OTHER" };
+        const durationMap: { [key: string]: number } = { "1시간": 3600, "6시간": 21600, "12시간": 43200, "24시간": 86400, "48시간": 172800, "72시간": 259200 };
+
         const postData = {
-          type: 'text',
           content: content,
           latitude: location.lat,
           longitude: location.lng,
-          timestamp: new Date().toISOString(),
+          visibility: visibilityMap[privacy],
+          anonymity: isAnonymous,
+          postType: categoryMap[category],
+          duration: durationMap[duration],
         };
         
         console.log("[v0] 텍스트 게시물(JSON) 전송 시도:", postData);
-        response = await fetch("https://api.herehear.p-e.kr/entry/text", {
+        response = await fetchApi("https://api.herehear.p-e.kr/posts/text", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(postData),
-          mode: "cors",
         });
 
-      } else { // ✨ 음성 모드 로직 변경
-
-        // 1. URL에 쿼리 파라미터로 위치 정보를 추가합니다.
-        const endpoint = `https://api.herehear.p-e.kr/entry/audio?latitude=${location.lat}&longitude=${location.lng}`;
-
-        // 2. 본문(body)에는 오직 음성 파일만 담습니다.
+      } else {
+        const endpoint = `https://api.herehear.p-e.kr/posts/audio?latitude=${location.lat}&longitude=${location.lng}`;
         const formData = new FormData();
-        if (audioBlob) {
-          formData.append("file", audioBlob, `voice_${Date.now()}.webm`);
-        }
+        if (audioBlob) formData.append("file", audioBlob, `voice_${Date.now()}.webm`);
         
         console.log(`[v0] 음성 게시물(FormData) 전송 시도: ${endpoint}`);
-        response = await fetch(endpoint, {
-          method: "POST",
-          body: formData,
-          mode: "cors",
-        });
+        response = await fetchApi(endpoint, { method: "POST", body: formData });
       }
 
       if (response.ok) {
-        const result = await response.json().catch(() => ({}));
-        console.log("[v0] 게시물 전송 성공:", result);
         alert("게시물이 성공적으로 등록되었습니다!");
         onClose();
       } else {
-        console.error("[v0] 게시물 전송 실패:", response.status, await response.text());
-        alert(`게시물 등록에 실패했습니다. (에러 코드: ${response.status})`);
+        const errorResult = await response.json().catch(() => ({}));
+        console.error("[v0] 게시물 전송 실패:", response.status, errorResult);
+        alert(`게시물 등록에 실패했습니다. (에러: ${errorResult.message || response.statusText})`);
       }
     } catch (error) {
       console.error("[v0] 게시물 전송 오류:", error);
@@ -199,10 +162,19 @@ try {
   }
 
   useEffect(() => {
+    const currentAudioRef = audioRef.current;
+    if (currentAudioRef) {
+        currentAudioRef.addEventListener('play', () => setIsPlaying(true));
+        currentAudioRef.addEventListener('pause', () => setIsPlaying(false));
+    }
     return () => {
       if (timerRef.current) clearInterval(timerRef.current)
       if (mediaRecorderRef.current && isRecording) mediaRecorderRef.current.stop()
       if (audioUrl) URL.revokeObjectURL(audioUrl)
+      if (currentAudioRef) {
+        currentAudioRef.removeEventListener('play', () => setIsPlaying(true));
+        currentAudioRef.removeEventListener('pause', () => setIsPlaying(false));
+      }
     }
   }, [isRecording, audioUrl])
 
@@ -226,23 +198,11 @@ try {
           <div className="space-y-3">
             <h3 className="font-medium">게시물 형태</h3>
             <div className="flex space-x-2">
-              <Button
-                variant={inputMode === "text" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setInputMode("text")}
-                className="flex-1"
-              >
-                <Type className="w-4 h-4 mr-2" />
-                텍스트
+              <Button variant={inputMode === "text" ? "default" : "outline"} size="sm" onClick={() => setInputMode("text")} className="flex-1">
+                <Type className="w-4 h-4 mr-2" /> 텍스트
               </Button>
-              <Button
-                variant={inputMode === "voice" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setInputMode("voice")}
-                className="flex-1"
-              >
-                <Mic className="w-4 h-4 mr-2" />
-                음성
+              <Button variant={inputMode === "voice" ? "default" : "outline"} size="sm" onClick={() => setInputMode("voice")} className="flex-1">
+                <Mic className="w-4 h-4 mr-2" /> 음성
               </Button>
             </div>
           </div>
@@ -259,20 +219,12 @@ try {
             ) : (
               <Card className="p-8 text-center border-2 border-dashed">
                   <div className="space-y-4">
-                    <div
-                      className={`w-16 h-16 rounded-full mx-auto flex items-center justify-center ${
-                        isRecording ? "bg-red-100 animate-pulse" : "bg-muted"
-                      }`}
-                    >
+                    <div className={`w-16 h-16 rounded-full mx-auto flex items-center justify-center ${isRecording ? "bg-red-100 animate-pulse" : "bg-muted"}`}>
                       {isRecording ? <Square className="w-8 h-8 text-red-500" /> : <Mic className="w-8 h-8 text-muted-foreground" />}
                     </div>
                     <div>
-                      <p className="font-medium">
-                        {isRecording ? `녹음 중... ${formatTime(recordingTime)}` : audioBlob ? "녹음 완료" : "음성 녹음하기"}
-                      </p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {isRecording ? "말씀해주세요" : audioBlob ? "재생하거나 다시 녹음할 수 있습니다" : "버튼을 눌러 녹음을 시작하세요"}
-                      </p>
+                      <p className="font-medium">{isRecording ? `녹음 중... ${formatTime(recordingTime)}` : audioBlob ? "녹음 완료" : "음성 녹음하기"}</p>
+                      <p className="text-sm text-muted-foreground mt-1">{isRecording ? "말씀해주세요" : audioBlob ? "재생하거나 다시 녹음할 수 있습니다" : "버튼을 눌러 녹음을 시작하세요"}</p>
                     </div>
                     
                     {audioBlob && audioUrl && (
@@ -291,18 +243,7 @@ try {
                       <Button onClick={isRecording ? stopRecording : startRecording} className={isRecording ? "bg-red-500 hover:bg-red-600" : ""}>
                         {isRecording ? "녹음 중지" : audioBlob ? "다시 녹음" : "녹음 시작"}
                       </Button>
-                      {audioBlob && (
-                        <Button variant="outline" onClick={() => {
-                          setAudioBlob(null)
-                          if (audioUrl) {
-                            URL.revokeObjectURL(audioUrl)
-                            setAudioUrl(null)
-                          }
-                          setIsPlaying(false)
-                        }}>
-                          삭제
-                        </Button>
-                      )}
+                      {audioBlob && (<Button variant="outline" onClick={() => { setAudioBlob(null); if (audioUrl) { URL.revokeObjectURL(audioUrl); setAudioUrl(null); } setIsPlaying(false); }}>삭제</Button>)}
                     </div>
                   </div>
               </Card>
@@ -324,12 +265,7 @@ try {
           <div className="space-y-3">
             <h3 className="font-medium">유지 시간</h3>
             <div className="grid grid-cols-3 gap-2">
-              {durations.map((dur) => (
-                <Button key={dur} variant={duration === dur ? "default" : "outline"} size="sm" onClick={() => setDuration(dur)} className="text-xs">
-                  <Clock className="w-3 h-3 mr-1" />
-                  {dur}
-                </Button>
-              ))}
+              {durations.map((dur) => (<Button key={dur} variant={duration === dur ? "default" : "outline"} size="sm" onClick={() => setDuration(dur)} className="text-xs"><Clock className="w-3 h-3 mr-1" />{dur}</Button>))}
             </div>
           </div>
           
@@ -337,7 +273,17 @@ try {
             <h3 className="font-medium">공개 범위</h3>
             <div className="space-y-2">
               {privacyOptions.map((option) => (
-                <Card key={option.value} className={`p-3 cursor-pointer transition-all ${privacy === option.value ? "ring-2 ring-primary bg-primary/5" : "hover:bg-muted/50"}`} onClick={() => setPrivacy(option.value)}>
+                <Card
+                  key={option.value}
+                  onClick={() => !option.disabled && setPrivacy(option.value)}
+                  className={cn(
+                    "p-3 transition-all",
+                    privacy === option.value && "ring-2 ring-primary bg-primary/5",
+                    option.disabled
+                      ? "cursor-not-allowed bg-gray-100 opacity-50"
+                      : "cursor-pointer hover:bg-muted/50"
+                  )}
+                >
                   <div className="flex items-center space-x-3">
                     <option.icon className="w-5 h-5 text-primary" />
                     <div>
@@ -348,6 +294,18 @@ try {
                 </Card>
               ))}
             </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <label htmlFor="anonymous-switch" className="flex flex-col cursor-pointer">
+                <span className="font-medium">익명 게시</span>
+                <span className="text-sm text-muted-foreground">작성자를 익명으로 표시합니다.</span>
+            </label>
+            <Switch
+                id="anonymous-switch"
+                checked={isAnonymous}
+                onCheckedChange={setIsAnonymous}
+            />
           </div>
           
           <Button className="w-full" disabled={(!content && !audioBlob) || isSubmitting || !location} onClick={handleSubmit}>
