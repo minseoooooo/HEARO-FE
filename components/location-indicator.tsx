@@ -6,10 +6,12 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { MapPin, Navigation, RefreshCw } from "lucide-react"
+import {fetchApi} from "@/lib/api";
 
 declare global {
   interface Window {
-    kakao: any
+      // @ts-ignore
+      kakao: any
   }
 }
 
@@ -129,7 +131,7 @@ export default function MainApp() {
   // 서버에 위치 전송
   const sendLocationToServer = async (lat: number, lng: number) => {
     try {
-      const res = await fetch("https://api.herehear.p-e.kr/", {
+      const res = await fetchApi("https://api.herehear.p-e.kr/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ latitude: lat, longitude: lng }),

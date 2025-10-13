@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card"
 import { Slider } from "@/components/ui/slider"
 import { MapPin, Volume2, VolumeX, AlertCircle } from "lucide-react"
 import { useLocation } from "./location-context"
+import {fetchApi} from "@/lib/api";
 
 interface VoiceMessage {
   id: number
@@ -71,7 +72,7 @@ export function GeofencingListener() {
     if (!location) return
     setIsLoading(true)
     try {
-      const res = await fetch(
+      const res = await fetchApi(
           `https://api.herehear.p-e.kr/posts/voice/nearby?lat=${location.lat}&lng=${location.lng}&radius=${currentRadius}&type=voice`
       )
       if (res.ok) {
