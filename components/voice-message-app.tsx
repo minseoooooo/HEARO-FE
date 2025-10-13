@@ -93,7 +93,9 @@ function AppContent() {
 
       <div className="pt-20 pb-20">
         {currentScreen === "home" && (
-          <HomeContent onMapAreaClick={handleMapAreaClick} />
+          <HomeContent onMapAreaClick={handleMapAreaClick} setCurrentAudio={function (audio: any): void {
+              throw new Error("Function not implemented.")
+          }} />
         )}
 
         {currentScreen === "listen" && <GeofencingListener />}
