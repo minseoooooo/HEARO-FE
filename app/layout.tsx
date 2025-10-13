@@ -7,7 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { Suspense } from "react"
 import { AccessibilityProvider } from "@/components/accessibility-context"
 import { AuthProvider } from "@/components/auth-context" // AuthProvider 임포트
-import "./globals.css"
+import "/styles/globals.css"
 
 export const metadata: Metadata = {
   title: "HereHear - 위치 기반 음성 메시지 앱",
