@@ -14,10 +14,9 @@ pipelines:
           # 1. 의존성 설치
           - npm install
 
-          # 2. 빌드 + 정적 내보내기
+          # 2. 빌드
           - rm -rf .next out
           - npm run build
-          - npm run export
           - ls out/
 
           # 3. AWS CLI 설치
@@ -25,6 +24,7 @@ pipelines:
 
 
           # 4. S3 업로드
+          - aws s3 ls s3://$AWS_BUCKET_NAME/
           - aws s3 sync out/ s3://$AWS_BUCKET_NAME --delete
 
           # 5. CloudFront 캐시 무효화
