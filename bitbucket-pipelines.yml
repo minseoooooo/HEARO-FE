@@ -14,16 +14,19 @@ pipelines:
           # 1. 의존성 설치
           - npm install
 
-          # 2. 빌드 (out 자동 생성)
+          # 2. 빌드 + 정적 내보내기
           - rm -rf .next out
           - npm run build
+          - npm run export
           - ls out/
 
           # 3. AWS CLI 설치
           - apt-get update && apt-get install -y awscli
+
 
           # 4. S3 업로드
           - aws s3 sync out/ s3://$AWS_BUCKET_NAME --delete
 
           # 5. CloudFront 캐시 무효화
           - aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_DISTRIBUTION_ID --paths "/*"
+
