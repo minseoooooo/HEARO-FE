@@ -8,7 +8,8 @@ import { MapPin, Navigation, RefreshCw } from "lucide-react"
 
 declare global {
   interface Window {
-    kakao: any
+      // @ts-ignore
+      kakao: any
   }
 }
 
