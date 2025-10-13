@@ -20,11 +20,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     localStorage.removeItem("accessToken")
+    // 쿠키의 유효기간을 과거로 설정하여 즉시 삭제합니다.
     document.cookie = "accessToken=; path=/; max-age=-1;"
     setToken(null)
     router.push("/auth")
   }
-
+  
   useEffect(() => {
     const storedToken = localStorage.getItem("accessToken")
     if (storedToken) {
@@ -32,35 +33,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setIsLoading(false)
 
-    // 401 오류 발생 시 로그아웃을 처리하는 이벤트 리스너
     const handleAuthError = () => {
       logout()
     }
 
     window.addEventListener("auth-error", handleAuthError)
-
     return () => {
       window.removeEventListener("auth-error", handleAuthError)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const login = (newToken: string) => {
     localStorage.setItem("accessToken", newToken)
+    // 미들웨어가 인식할 수 있도록 쿠키를 설정합니다.
     document.cookie = `accessToken=${newToken}; path=/; max-age=86400; SameSite=Lax;`
     setToken(newToken)
     router.push("/")
   }
 
-  const value = {
-    isAuthenticated: !!token,
-    token,
-    login,
-    logout,
-    isLoading,
-  }
+  const value = { isAuthenticated: !!token, token, login, logout, isLoading }
 
   if (isLoading) {
-    return null;
+    return null; // 로딩 중에는 아무것도 표시하지 않아 화면 깜빡임 방지
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

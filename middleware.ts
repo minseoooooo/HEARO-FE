@@ -2,24 +2,20 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
-  // 쿠키에서 accessToken 가져오기
   const token = request.cookies.get('accessToken')?.value
   const { pathname } = request.nextUrl
 
-  // 보호된 경로(홈페이지 등)와 공개 경로(로그인 페이지) 정의
-  const protectedRoutes = ['/']
-  const publicRoutes = ['/auth']
+  const isAuthPage = pathname.startsWith('/auth')
 
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
-  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route))
-
-  // 토큰이 없는데 보호된 경로에 접근하려는 경우 -> 로그인 페이지로 리디렉션
-  if (!token && isProtectedRoute) {
+  // 토큰이 없는데, 접근하려는 페이지가 로그인 페이지가 아닌 경우
+  if (!token && !isAuthPage) {
+    // 로그인 페이지로 리디렉션
     return NextResponse.redirect(new URL('/auth', request.url))
   }
 
-  // 토큰이 있는데 공개 경로(로그인 페이지)에 접근하려는 경우 -> 홈페이지로 리디렉션
-  if (token && isPublicRoute) {
+  // 토큰이 있는데 로그인 페이지에 접근하려는 경우
+  if (token && isAuthPage) {
+    // 홈페이지로 리디렉션
     return NextResponse.redirect(new URL('/', request.url))
   }
 

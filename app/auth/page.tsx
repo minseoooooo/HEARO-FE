@@ -15,13 +15,11 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { useAuth } from "@/components/auth-context"
 import { fetchApi } from "@/lib/api"
 
-// 로그인 폼 유효성 검사 스키마
 const loginSchema = z.object({
   email: z.string().email({ message: "올바른 이메일 형식을 입력해주세요." }),
   password: z.string().min(1, { message: "비밀번호를 입력해주세요." }),
 })
 
-// 회원가입 폼 유효성 검사 스키마
 const signUpSchema = z.object({
   email: z.string().email({ message: "올바른 이메일 형식을 입력해주세요." }),
   password: z.string().min(8, { message: "비밀번호는 8자 이상이어야 합니다." }),
@@ -32,7 +30,6 @@ const signUpSchema = z.object({
   path: ["confirmPassword"],
 })
 
-// ID 중복 확인을 위한 상태 타입
 type IdCheckState = {
   message: string
   isAvailable: boolean
@@ -45,7 +42,6 @@ export default function AuthPage() {
   const [idCheck, setIdCheck] = useState<IdCheckState>(null)
   const [isLoading, setIsLoading] = useState(false)
   const { login } = useAuth()
-  const router = useRouter()
 
   const form = useForm({
     resolver: zodResolver(isLogin ? loginSchema : signUpSchema),
@@ -57,7 +53,6 @@ export default function AuthPage() {
     },
   })
 
-  // 이메일 중복 확인 핸들러 (POST 방식으로 수정)
   const handleCheckEmail = async () => {
     const email = form.getValues("email");
     const isEmailValid = await form.trigger("email");
@@ -68,7 +63,6 @@ export default function AuthPage() {
     }
 
     try {
-      // API 요청 방식을 POST로 변경하고, 이메일을 body에 담아 전송
       const response = await fetchApi(`https://api.herehear.p-e.kr/auth/check-email`, {
         method: 'POST',
         body: JSON.stringify({ email: email }),
@@ -114,7 +108,6 @@ export default function AuthPage() {
         })
         if (response.ok) {
           const data = await response.json()
-          document.cookie = `accessToken=${data.accessToken}; path=/; max-age=86400;`
           login(data.accessToken)
         } else {
           const errorData = await response.json()
@@ -123,7 +116,7 @@ export default function AuthPage() {
       } catch (error) {
         form.setError("root", { message: "로그인 중 오류가 발생했습니다." })
       }
-    } else { // 회원가입 로직
+    } else {
       if (!idCheck?.isAvailable) {
         form.setError("email", { message: "이메일 중복 확인을 완료해주세요." })
         setIsLoading(false)
@@ -145,11 +138,15 @@ export default function AuthPage() {
             setIsLogin(true)
             form.reset()
         } else {
-            const errorData = await response.json();
-            form.setError("root", { message: errorData.message || "회원가입에 실패했습니다." });
+            if (response.status === 500) {
+              form.setError("root", { message: "서버에 문제가 발생했습니다. 잠시 후 다시 시도해주세요." });
+            } else {
+              const errorData = await response.json().catch(() => ({}));
+              form.setError("root", { message: errorData.message || "회원가입에 실패했습니다." });
+            }
         }
       } catch (error) {
-        form.setError("root", { message: "회원가입 중 오류가 발생했습니다." });
+        form.setError("root", { message: "회원가입 중 네트워크 오류가 발생했습니다." });
       }
     }
     setIsLoading(false)
@@ -263,8 +260,7 @@ export default function AuthPage() {
           <button onClick={toggleForm} className="text-sm text-gray-600 hover:underline">
             {isLogin ? "계정이 없으신가요? 회원가입" : "이미 계정이 있으신가요? 로그인"}
           </button>
-          <a href="#" className="text-sm text-gray-600 hover:underline">비밀번호를 잊으셨나요?</a>
-        </CardFooter>
+          </CardFooter>
       </Card>
     </div>
   )
