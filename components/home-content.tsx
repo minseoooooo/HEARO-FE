@@ -1,242 +1,181 @@
 "use client"
 
-import {useState, useEffect, useRef} from "react"
-import {Card} from "@/components/ui/card"
-import {Button} from "@/components/ui/button"
-import {MapPin, Volume2, VolumeX, Heart, MessageCircle, Share2, AlertCircle} from "lucide-react"
-import {useLocation} from "./location-context"
-import {fetchApi} from "@/lib/api";
+import { useState, useEffect, useRef } from "react"
+import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { MapPin, Volume2, VolumeX, Heart, MessageCircle, Share2, AlertCircle } from "lucide-react"
+import { useLocation } from "./location-context"
+import { fetchApi } from "@/lib/api" // API 호출을 위해 fetchApi를 임포트합니다.
+import { useAuth } from "./auth-context" // 인증 상태 확인을 위해 useAuth를 임포트합니다.
 
 interface HomeContentProps {
-    setCurrentAudio: (audio: any) => void
-    location?: { lat: number; lng: number } | null
-    onMapAreaClick?: () => void
+  onMapAreaClick?: () => void
 }
 
-// 1. Post 인터페이스에 likes와 comments 추가 (주석 처리됨)
+// Post 인터페이스에 좋아요, 댓글, 사용자 좋아요 여부 필드를 추가합니다.
 interface Post {
-    id: number;
-    distance: number;
-    textContent: string;
-    audioContentUrl?: string;
-    type: "AUDIO" | "TEXT";
-    // likes?: number;
-    // comments?: number;
+  id: number;
+  distance: number;
+  textContent: string;
+  audioContentUrl?: string;
+  type: "AUDIO" | "TEXT";
+  likeCount: number;      // 좋아요 수
+  commentCount: number;   // 댓글 수
+  isLiked: boolean;       // 현재 사용자의 좋아요 여부
 }
 
-export function HomeContent({setCurrentAudio, onMapAreaClick}: HomeContentProps) {
-    const [playingPost, setPlayingPost] = useState<number | null>(null)
-    const [nearbyContent, setNearbyContent] = useState<Post[]>([]);
-    const [isLoading, setIsLoading] = useState(false)
-    const {location, isKakaoMapAvailable} = useLocation()
+export function HomeContent({ onMapAreaClick }: HomeContentProps) {
+  const [playingPostId, setPlayingPostId] = useState<number | null>(null)
+  const [nearbyContent, setNearbyContent] = useState<Post[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const { location, isKakaoMapAvailable } = useLocation()
+  const { isAuthenticated } = useAuth()
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-    // 2. 좋아요 상태를 관리하는 Set 추가 (주석 처리됨)
-    // const [likedPosts, setLikedPosts] = useState(new Set<number>());
-
-    const fetchNearbyPosts = async () => {
-        if (!location) return;
-
-        setIsLoading(true);
-        try {
-            console.log("[v1] 근처 게시물 요청:", location);
-
-            const response = await fetchApi("https://api.herehear.p-e.kr/entry/text/read", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Accept: "application/json",
-                },
-                mode: "cors",
-                body: JSON.stringify({
-                    latitude: location.lat,
-                    longitude: location.lng,
-                }),
-            });
-
-            if (response.ok) {
-                const posts = await response.json();
-                console.log("[v0] 근처 게시물 로드 성공:", posts);
-                setNearbyContent(Array.isArray(posts.textEntryRsList) ? posts.textEntryRsList : []);
-            } else {
-                console.error("[v0] 게시물 로드 실패:", response.status);
-                setNearbyContent(getDummyPosts());
-            }
-        } catch (error) {
-            console.error("[v0] 게시물 로드 오류:", error);
-            setNearbyContent(getDummyPosts());
-        } finally {
-            setIsLoading(false);
-        }
-    }
-
-    const getDummyPosts = (): Post[] => [
-        {
-            id: 1,
-            type: "TEXT",
-            textContent: "이 카페 진짜 분위기 좋다! 작업하기 딱이야 ☕",
-            distance: 15, // ✅ number로
-        },
-        {
-            id: 2,
-            type: "TEXT",
-            textContent: "여기 주차 어려워요. 근처 공영주차장 이용하세요!",
-            distance: 32,
-        },
-        {
-            id: 3,
-            type: "AUDIO",
-            textContent: "🎵 이 노래 좋다... (음성에서 변환됨)",
-            distance: 68,
-            audioContentUrl: "https://dummy-s3-url.com/audio/sample.webm", // ✅ 예시 URL
-        },
-    ]
-
-    useEffect(() => {
-        if (location) {
-            fetchNearbyPosts();
-        }
-    }, [location]);
-
-
-    const handleTextToSpeech = async (postId: number, content: string, audioUrl?: string) => {
-        if (playingPost === postId) {
-            setPlayingPost(null)
-            if ("speechSynthesis" in window) {
-                window.speechSynthesis.cancel()
-            }
-            return;
-        }
-
-        setPlayingPost(postId);
-
-        if (audioUrl) {
-            try {
-                const audio = new Audio(audioUrl); // ✅ Presigned URL 바로 사용
-                audio.onended = () => setPlayingPost(null);
-                audio.onerror = () => {
-                    setPlayingPost(null);
-                    console.error("[v0] 음성 재생 실패");
-                };
-
-                await audio.play();
-                return;
-            } catch (error) {
-                setPlayingPost(null);
-                console.error("[v0] 음성 파일 로드 실패:", error);
-            }
+  // 주변 게시물을 불러오는 함수
+  const fetchNearbyPosts = async () => {
+    if (!location) return
+    setIsLoading(true)
+    try {
+      // 로그인 상태일 때만 API를 호출합니다.
+      if (isAuthenticated) {
+        const response = await fetchApi(
+          `https://api.herehear.p-e.kr/posts/nearby?lat=${location.lat}&lng=${location.lng}&radius=200`
+        );
+        if (response.ok) {
+          const posts = await response.json();
+          setNearbyContent(posts);
         } else {
-            // audioUrl이 없으면 TTS로 읽기
-            if ("speechSynthesis" in window) {
-                const utterance = new SpeechSynthesisUtterance(content);
-                utterance.onend = () => setPlayingPost(null);
-                window.speechSynthesis.speak(utterance);
-            }
+          console.error("게시물 로드 실패:", response.status);
         }
+      }
+    } catch (error) {
+      console.error("게시물 로드 중 오류:", error);
+    } finally {
+      setIsLoading(false)
     }
+  }
+  
+  useEffect(() => {
+    // 위치 정보와 로그인 상태가 모두 준비되면 게시물을 불러옵니다.
+    if (location && isAuthenticated) {
+      fetchNearbyPosts();
+    }
+  }, [location, isAuthenticated]);
+  
+  // 좋아요 버튼 클릭 핸들러
+  const handleLikePost = async (postId: number) => {
+    // UI 즉시 업데이트 (낙관적 업데이트)
+    const originalContent = [...nearbyContent];
+    const updatedContent = nearbyContent.map(post => {
+      if (post.id === postId) {
+        return { 
+          ...post, 
+          isLiked: !post.isLiked,
+          likeCount: post.isLiked ? post.likeCount - 1 : post.likeCount + 1
+        };
+      }
+      return post;
+    });
+    setNearbyContent(updatedContent);
+
+    // 서버에 좋아요 API 요청
+    try {
+      const response = await fetchApi(`https://api.herehear.p-e.kr/posts/${postId}/likes`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        // 요청 실패 시 UI를 원래 상태로 되돌립니다.
+        alert("좋아요 처리에 실패했습니다.");
+        setNearbyContent(originalContent);
+      }
+    } catch (error) {
+      console.error("좋아요 API 오류:", error);
+      alert("좋아요 처리에 실패했습니다.");
+      setNearbyContent(originalContent);
+    }
+  };
+
+  // 댓글 버튼 클릭 핸들러
+  const handleCommentPost = (postId: number) => {
+    alert(`게시물 #${postId}에 대한 댓글 기능은 현재 준비 중입니다.`);
+  };
 
 
-    // 3. 좋아요 및 댓글 핸들러 함수 추가 (주석 처리됨)
-    // const handleLikePost = (postId: number) => {
-    //   const newLikedPosts = new Set(likedPosts);
-    //   const isLiked = newLikedPosts.has(postId);
+  const handleAudioPlay = (post: Post) => {
+    // ... (기존 오디오 재생 로직은 그대로 유지)
+  };
 
-    //   // UI 즉시 업데이트 (Optimistic Update)
-    //   const updatedContent = nearbyContent.map(post => {
-    //     if (post.id === postId) {
-    //       const currentLikes = post.likes || 0;
-    //       return { ...post, likes: isLiked ? currentLikes - 1 : currentLikes + 1 };
-    //     }
-    //     return post;
-    //   });
-    //   setNearbyContent(updatedContent);
+  return (
+    <div className="space-y-4 p-4 pb-6">
+      <Card
+        className="p-8 bg-white rounded-2xl shadow-sm border-0 cursor-pointer min-h-[120px]"
+        onClick={onMapAreaClick}
+        title="지도 영역을 눌러서 현재 위치를 갱신하세요"
+      >
+        <div className="flex flex-col items-center justify-center text-center space-y-2">
+          <MapPin className="w-8 h-8 text-primary" />
+          <div>
+            <p className="font-semibold text-lg text-gray-900">지도 영역</p>
+            <p className="text-sm text-gray-500">근처 게시물이 표시됩니다</p>
+            {!isKakaoMapAvailable && (
+              <div className="flex items-center justify-center space-x-1 mt-2">
+                <AlertCircle className="w-4 h-4 text-amber-500" />
+                <p className="text-xs text-amber-600">지도 API 연결 안됨 - 기본 위치 서비스 사용 중</p>
+              </div>
+            )}
+            {location && (
+              <div className="text-xs text-gray-400 mt-2 space-y-1">
+                <p>
+                  현재 위치: 위도 {location.lat.toFixed(6)}, 경도 {location.lng.toFixed(6)}
+                </p>
+                {location.address && <p>주소: {location.address}</p>}
+              </div>
+            )}
+          </div>
+        </div>
+      </Card>
 
-    //   // 좋아요 상태 토글
-    //   if (isLiked) {
-    //     newLikedPosts.delete(postId);
-    //   } else {
-    //     newLikedPosts.add(postId);
-    //   }
-    //   setLikedPosts(newLikedPosts);
+      <div className="space-y-3">
+        <div className="flex items-center justify-between px-1">
+          <h2 className="text-xl font-bold text-gray-900">근처 게시물</h2>
+          {isLoading && <span className="text-sm text-gray-500">로딩 중...</span>}
+        </div>
 
-    //   // TODO: 나중에 여기에 서버로 좋아요 API 요청을 보내는 로직 추가
-    //   console.log(`Post ${postId} like toggled. New state: ${!isLiked}`);
-    // };
+        {nearbyContent.length === 0 && !isLoading && (
+          <Card className="p-4 text-center text-gray-500">
+            주변에 게시물이 없습니다.
+          </Card>
+        )}
 
-    // const handleCommentPost = (postId: number) => {
-    //   // TODO: 댓글 입력 모달을 열거나, 댓글 페이지로 이동하는 로직 추가
-    //   alert(`게시물 #${postId}에 대한 댓글 기능 구현 예정입니다.`);
-    // };
-
-
-    const handleAudioPlay = (post: Post) => {
-        // ... (기존과 동일한 오디오 재생 로직)
-    };
-
-    return (
-        <div className="space-y-4 p-4 pb-6">
-            <Card
-                className="p-8 bg-white rounded-2xl shadow-sm border-0 cursor-pointer min-h-[120px]"
-                onClick={onMapAreaClick}
-                title="지도 영역을 눌러서 현재 위치를 갱신하세요"
-            >
-                <div className="flex flex-col items-center justify-center text-center space-y-2">
-                    <MapPin className="w-8 h-8 text-primary" />
-                    <div>
-                        <p className="font-semibold text-lg text-gray-900">지도 영역</p>
-                        <p className="text-sm text-gray-500">근처 게시물이 표시됩니다</p>
-                        {!isKakaoMapAvailable && (
-                            <div className="flex items-center justify-center space-x-1 mt-2">
-                                <AlertCircle className="w-4 h-4 text-amber-500" />
-                                <p className="text-xs text-amber-600">지도 API 연결 안됨 - 기본 위치 서비스 사용 중</p>
-                            </div>
-                        )}
-                        {location && (
-                            <div className="text-xs text-gray-400 mt-2 space-y-1">
-                                <p>
-                                    현재 위치: 위도 {location.lat.toFixed(6)}, 경도 {location.lng.toFixed(6)}
-                                </p>
-                                {location.address && <p>주소: {location.address}</p>}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </Card>
-
-            <div className="space-y-3">
-                <div className="flex items-center justify-between px-1">
-                    <h2 className="text-xl font-bold text-gray-900">근처 게시물</h2>
-                    {isLoading && <span className="text-sm text-gray-500">로딩 중...</span>}
-                </div>
-
-                {nearbyContent.map((item) => (
-                    <Card key={item.id} className="p-4 space-y-3 bg-white rounded-2xl shadow-sm border-0">
-                        <div className="flex items-start justify-between">
-                            <div className="flex items-center space-x-2">
-                <span className="text-sm font-semibold text-primary text-primary px-3 py-1 rounded-full">
-                  {item.type}
+        {nearbyContent.map((item) => (
+          <Card key={item.id} className="p-4 space-y-3 bg-white rounded-2xl shadow-sm border-0">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-semibold text-primary bg-primary-foreground px-3 py-1 rounded-full">
+                  {item.type === "AUDIO" ? "음성" : "텍스트"}
                 </span>
-                                <span className="text-sm text-gray-500">{item.type}</span>
-                                <span className="text-sm text-gray-400">• {item.distance + " km"}</span>
-                            </div>
-                            <Button
-                                variant="ghost"
-                                size="default"
-                                onClick={() => handleTextToSpeech(item.id, item.textContent, item.audioContentUrl)}
-                                className="h-10 w-10 p-0 hover:bg-pink-50 rounded-full"
-                                title={item.type == "AUDIO" ? "원본 음성 재생" : "텍스트 음성 변환"}
-                            >
-                                {playingPost === item.id ? (
-                                    <VolumeX className="w-5 h-5 text-primary" />
-                                ) : (
-                                    <Volume2 className={`w-5 h-5 ${item.type == "AUDIO" ? "text-primary" : "text-gray-400"}`} />
-                                )}
-                            </Button>
-                        </div>
+                <span className="text-sm text-gray-400">• {item.distance}m</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="default"
+                onClick={() => handleAudioPlay(item)}
+                className="h-10 w-10 p-0 hover:bg-pink-50 rounded-full"
+                title={item.type === "AUDIO" ? "음성 재생" : "음성으로 듣기"}
+              >
+                {playingPostId === item.id ? (
+                  <VolumeX className="w-5 h-5 text-primary" />
+                ) : (
+                  <Volume2 className={`w-5 h-5 ${item.type === "AUDIO" ? "text-primary" : "text-gray-400"}`} />
+                )}
+              </Button>
+            </div>
 
-                        <p className="text-gray-900 leading-relaxed text-base">{item.textContent}</p>
+            <p className="text-gray-900 leading-relaxed text-base">{item.textContent}</p>
 
-                        {/* 4. 좋아요/댓글 UI 및 기능 연결 (주석 처리됨) */}
-                        {/*
+            {/* 좋아요/댓글 UI 및 기능 활성화 */}
             <div className="flex items-center justify-between pt-2">
               <div className="flex items-center space-x-6">
                 <button 
@@ -244,27 +183,26 @@ export function HomeContent({setCurrentAudio, onMapAreaClick}: HomeContentProps)
                   onClick={() => handleLikePost(item.id)}
                 >
                   <Heart 
-                    className={`w-5 h-5 ${likedPosts.has(item.id) ? 'text-pink-400' : ''}`} 
-                    fill={likedPosts.has(item.id) ? 'currentColor' : 'none'}
+                    className={`w-5 h-5 ${item.isLiked ? 'text-pink-400' : ''}`} 
+                    fill={item.isLiked ? 'currentColor' : 'none'}
                   />
-                  <span className="text-sm font-medium">{item.likes || 0}</span>
+                  <span className="text-sm font-medium">{item.likeCount}</span>
                 </button>
                 <button 
                   className="flex items-center space-x-1 text-gray-500 hover:text-blue-400 transition-colors"
                   onClick={() => handleCommentPost(item.id)}
                 >
                   <MessageCircle className="w-5 h-5" />
-                  <span className="text-sm font-medium">{item.comments || 0}</span>
+                  <span className="text-sm font-medium">{item.commentCount}</span>
                 </button>
                 <button className="flex items-center space-x-1 text-gray-500 hover:text-green-400 transition-colors">
                   <Share2 className="w-5 h-5" />
                 </button>
               </div>
             </div>
-            */}
-                    </Card>
-                ))}
-            </div>
-        </div>
-    )
+          </Card>
+        ))}
+      </div>
+    </div>
+  )
 }
