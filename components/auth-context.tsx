@@ -26,7 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         document.cookie = "accessToken=; path=/; max-age=-1;";
         setToken(null);
         // ✅ 정적 export 환경에서는 강제 새로고침이 필요함
-        window.location.replace("/login");
+        window.location.replace("/auth");
     };
 
     /** ✅ 초기 토큰 확인 및 이벤트 등록 */
@@ -58,9 +58,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         if (isLoading) return; // 아직 초기화 안 됨
 
-        if (!token && pathname !== "/login") {
-            window.location.replace("/login"); // ✅ 강제 이동
-        } else if (token && pathname === "/login") {
+        if (!token && pathname !== "/auth") {
+            window.location.replace("/auth"); // ✅ 강제 이동
+        } else if (token && pathname === "/auth") {
             window.location.replace("/"); // ✅ 강제 이동
         }
     }, [token, pathname, isLoading]);
