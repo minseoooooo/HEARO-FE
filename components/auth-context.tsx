@@ -25,7 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem("accessToken");
         document.cookie = "accessToken=; path=/; max-age=-1;";
         setToken(null);
-        // ✅ 정적 export 환경에서는 강제 새로고침이 필요함
+        // ✅ 실제 로그인 페이지는 /auth 이므로 /auth로 이동
         window.location.replace("/auth");
     };
 
@@ -50,18 +50,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("accessToken", newToken);
         document.cookie = `accessToken=${newToken}; path=/; max-age=86400; SameSite=Lax; Secure;`;
         setToken(newToken);
-        // ✅ 로그인 시에도 강제 새로고침으로 메인페이지 완전히 로드
+        // ✅ 로그인 완료 후 메인화면으로 이동
         window.location.replace("/");
     };
 
     /** ✅ 로그인 상태 기반 리디렉션 처리 */
     useEffect(() => {
-        if (isLoading) return; // 아직 초기화 안 됨
+        if (isLoading) return;
 
+        // ✅ 로그인 안 한 상태에서 보호된 페이지 접근 시
         if (!token && pathname !== "/auth") {
-            window.location.replace("/auth"); // ✅ 강제 이동
-        } else if (token && pathname === "/auth") {
-            window.location.replace("/"); // ✅ 강제 이동
+            window.location.replace("/auth");
+        }
+
+        // ✅ 이미 로그인한 상태인데 로그인 페이지 접근 시
+        if (token && pathname === "/auth") {
+            window.location.replace("/");
         }
     }, [token, pathname, isLoading]);
 
