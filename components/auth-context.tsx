@@ -25,7 +25,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem("accessToken");
         document.cookie = "accessToken=; path=/; max-age=-1;";
         setToken(null);
-        router.replace("/login");
+        // ✅ 정적 export 환경에서는 강제 새로고침이 필요함
+        window.location.replace("/login");
     };
 
     /** ✅ 초기 토큰 확인 및 이벤트 등록 */
@@ -49,7 +50,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("accessToken", newToken);
         document.cookie = `accessToken=${newToken}; path=/; max-age=86400; SameSite=Lax; Secure;`;
         setToken(newToken);
-        router.replace("/");
+        // ✅ 로그인 시에도 강제 새로고침으로 메인페이지 완전히 로드
+        window.location.replace("/");
     };
 
     /** ✅ 로그인 상태 기반 리디렉션 처리 */
@@ -57,11 +59,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (isLoading) return; // 아직 초기화 안 됨
 
         if (!token && pathname !== "/login") {
-            router.replace("/login");
+            window.location.replace("/login"); // ✅ 강제 이동
         } else if (token && pathname === "/login") {
-            router.replace("/");
+            window.location.replace("/"); // ✅ 강제 이동
         }
-    }, [token, pathname, router, isLoading]);
+    }, [token, pathname, isLoading]);
 
     const value = { isAuthenticated: !!token, token, login, logout, isLoading };
 
@@ -76,11 +78,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-/** ✅ Hook */
 export function useAuth() {
     const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error("useAuth must be used within an AuthProvider");
-    }
+    if (!context) throw new Error("useAuth must be used within an AuthProvider");
     return context;
 }
+
