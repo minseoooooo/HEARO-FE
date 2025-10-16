@@ -54,13 +54,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         window.location.replace("/");
     };
 
-    /** ✅ 로그인 상태 기반 리디렉션 처리 */
+    /** ✅ 로그인 상태 기반 리디렉션 처리 (루프 방지 포함) */
     useEffect(() => {
         if (isLoading) return;
 
-        // ✅ 로그인 안 한 상태에서 보호된 페이지 접근 시
-        if (!token && pathname !== "/auth") {
-            window.location.replace("/auth");
+        // ✅ 로그인 안 된 경우 — 이미 /auth라면 리디렉션 안 함
+        if (!token) {
+            if (pathname !== "/auth") {
+                window.location.replace("/auth");
+            }
+            return;
         }
 
         // ✅ 이미 로그인한 상태인데 로그인 페이지 접근 시
