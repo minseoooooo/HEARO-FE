@@ -54,20 +54,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         window.location.replace("/");
     };
 
-    /** ✅ 로그인 상태 기반 리디렉션 처리 (루프 방지 포함) */
+    /** ✅ 로그인 상태 기반 리디렉션 처리 (루프 완벽 차단) */
     useEffect(() => {
         if (isLoading) return;
 
-        // ✅ 로그인 안 된 경우 — 이미 /auth라면 리디렉션 안 함
+        // ✅ 현재 경로를 정규화해서 슬래시 유무 상관없이 처리
+        const normalizedPath = pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
+
+        // ✅ 로그인 안 된 경우 — 이미 /auth에 있다면 리디렉션 안 함
         if (!token) {
-            if (pathname !== "/auth") {
+            if (normalizedPath !== "/auth") {
                 window.location.replace("/auth");
             }
             return;
         }
 
-        // ✅ 이미 로그인한 상태인데 로그인 페이지 접근 시
-        if (token && pathname === "/auth") {
+        // ✅ 로그인 된 상태에서 /auth 접근 시 메인으로
+        if (token && normalizedPath === "/auth") {
             window.location.replace("/");
         }
     }, [token, pathname, isLoading]);
