@@ -94,7 +94,7 @@ export function HomeContent({ onMapAreaClick }: HomeContentProps) {
 
         // 서버에 좋아요 API 요청
         try {
-            const response = await fetchApi(`https://hearo-docker-production.up.railway.app/posts/${postId}/likes`, {
+            const response = await fetchApi(`https://hearo-docker-production.up.railway.app/entry/${postId}/likes`, {
                 method: 'POST',
             });
 

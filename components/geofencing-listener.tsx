@@ -73,7 +73,7 @@ export function GeofencingListener() {
     setIsLoading(true)
     try {
       const res = await fetchApi(
-          `https://hearo-docker-production.up.railway.app/posts/voice/nearby?lat=${location.lat}&lng=${location.lng}&radius=${currentRadius}&type=voice`
+          `https://hearo-docker-production.up.railway.app/entry/voice/nearby?lat=${location.lat}&lng=${location.lng}&radius=${currentRadius}&type=voice`
       )
       if (res.ok) {
         const data = await res.json()
