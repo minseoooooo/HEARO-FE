@@ -131,7 +131,7 @@ export default function MainApp() {
   // 서버에 위치 전송
   const sendLocationToServer = async (lat: number, lng: number) => {
     try {
-      const res = await fetchApi("https://api.herehear.p-e.kr/", {
+      const res = await fetchApi("https://hearo-docker-production.up.railway.app/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ latitude: lat, longitude: lng }),

@@ -41,7 +41,7 @@ export function HomeContent({ onMapAreaClick }: HomeContentProps) {
             if (isAuthenticated) {
                 console.log("[v1] 근처 게시물 요청:", location);
 
-                const response = await fetchApi("https://api.herehear.p-e.kr/entry/text/read", {
+                const response = await fetchApi("https://hearo-docker-production.up.railway.app/entry/text/read", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -94,7 +94,7 @@ export function HomeContent({ onMapAreaClick }: HomeContentProps) {
 
         // 서버에 좋아요 API 요청
         try {
-            const response = await fetchApi(`https://api.herehear.p-e.kr/posts/${postId}/likes`, {
+            const response = await fetchApi(`https://hearo-docker-production.up.railway.app/posts/${postId}/likes`, {
                 method: 'POST',
             });
 

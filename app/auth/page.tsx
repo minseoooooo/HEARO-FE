@@ -63,7 +63,7 @@ export default function AuthPage() {
     }
 
     try {
-      const response = await fetchApi(`https://api.herehear.p-e.kr/auth/check-email`, {
+      const response = await fetchApi(`https://hearo-docker-production.up.railway.app/auth/check-email`, {
         method: 'POST',
         body: JSON.stringify({ email: email }),
       })
@@ -102,7 +102,7 @@ export default function AuthPage() {
 
     if (isLogin) {
       try {
-        const response = await fetchApi("https://api.herehear.p-e.kr/auth/login", {
+        const response = await fetchApi("https://hearo-docker-production.up.railway.app/auth/login", {
           method: "POST",
           body: JSON.stringify({ email: values.email, password: values.password }),
         })
@@ -124,7 +124,7 @@ export default function AuthPage() {
       }
       try {
         const signupValues = values as z.infer<typeof signUpSchema>
-        const response = await fetchApi("https://api.herehear.p-e.kr/auth/signup", {
+        const response = await fetchApi("https://hearo-docker-production.up.railway.app/auth/signup", {
             method: "POST",
             body: JSON.stringify({
                 email: signupValues.email,

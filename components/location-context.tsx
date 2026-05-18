@@ -55,7 +55,7 @@ export function LocationProvider({ children }: { children: ReactNode }) {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 10000)
 
-      const response = await fetchApi("https://api.herehear.p-e.kr/user/location", {
+      const response = await fetchApi("https://hearo-docker-production.up.railway.app/user/location", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

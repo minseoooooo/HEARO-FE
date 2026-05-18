@@ -131,13 +131,13 @@ export function CreateContentModal({ onClose }: CreateContentModalProps) {
         };
         
         console.log("[v0] 텍스트 게시물(JSON) 전송 시도:", postData);
-        response = await fetchApi("https://api.herehear.p-e.kr/posts/text", {
+        response = await fetchApi("https://hearo-docker-production.up.railway.app/posts/text", {
           method: "POST",
           body: JSON.stringify(postData),
         });
 
       } else {
-        const endpoint = `https://api.herehear.p-e.kr/posts/audio?latitude=${location.lat}&longitude=${location.lng}`;
+        const endpoint = `https://hearo-docker-production.up.railway.app/posts/audio?latitude=${location.lat}&longitude=${location.lng}`;
         const formData = new FormData();
         if (audioBlob) formData.append("file", audioBlob, `voice_${Date.now()}.webm`);
         

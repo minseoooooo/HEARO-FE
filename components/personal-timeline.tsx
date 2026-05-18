@@ -40,7 +40,7 @@ export function PersonalTimeline() {
     try {
       console.log("[v0] 타임라인 데이터 요청")
 
-      const response = await fetchApi("https://api.herehear.p-e.kr/user/timeline", {
+      const response = await fetchApi("https://hearo-docker-production.up.railway.app/user/timeline", {
         method: "GET",
         headers: {
           Accept: "application/json",
@@ -135,7 +135,7 @@ export function PersonalTimeline() {
       // 음성 파일이 있으면 서버에서 다운로드하여 재생
       if (audioUrl) {
         try {
-          const response = await fetchApi(`https://api.herehear.p-e.kr/audio/${audioUrl}`, {
+          const response = await fetchApi(`https://hearo-docker-production.up.railway.app/audio/${audioUrl}`, {
             mode: "cors",
           })
           if (response.ok) {

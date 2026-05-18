@@ -34,7 +34,7 @@ export function GeofencingListener() {
     console.log("[v1] SSE 연결 시작:", location, "반경:", currentRadius)
 
     const es = new EventSource(
-        `https://api.herehear.p-e.kr/sse?latitude=${location.lat}&longitude=${location.lng}&radius=${currentRadius}`
+        `https://hearo-docker-production.up.railway.app/sse?latitude=${location.lat}&longitude=${location.lng}&radius=${currentRadius}`
     )
 
     es.onopen = () => console.log("[v1] SSE 연결 성공")
@@ -73,7 +73,7 @@ export function GeofencingListener() {
     setIsLoading(true)
     try {
       const res = await fetchApi(
-          `https://api.herehear.p-e.kr/posts/voice/nearby?lat=${location.lat}&lng=${location.lng}&radius=${currentRadius}&type=voice`
+          `https://hearo-docker-production.up.railway.app/posts/voice/nearby?lat=${location.lat}&lng=${location.lng}&radius=${currentRadius}&type=voice`
       )
       if (res.ok) {
         const data = await res.json()
